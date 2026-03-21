@@ -1,0 +1,9 @@
+fastapi>=0.110
+uvicorn>=0.29
+aiohttp>=3.9
+beautifulsoup4>=4.12
+icalendar>=5.0
+cryptography>=42.0
+apscheduler>=3.10
+aiosqlite>=0.20
+python-dotenv>=1.0
