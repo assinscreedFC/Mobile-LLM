@@ -43,7 +43,7 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
   const [expandedFolders, setExpandedFolders] = useState({ maths: true, prog: false });
   const [isSearching, setIsSearching] = useState(false);
   const [loading, setLoading] = useState(false);
-  const searchInputRef = useRef(null);
+  const searchInputRef = useRef<TextInput>(null);
 
   // Charger l'historique quand on ouvre la barre
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
     }
   }, [visible, fetchHistory]);
 
-  const toggleFolder = (folder) => {
+  const toggleFolder = (folder: keyof typeof expandedFolders) => {
     setExpandedFolders(prev => ({ ...prev, [folder]: !prev[folder] }));
   };
 
@@ -66,7 +66,7 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
     setTimeout(() => searchInputRef.current?.focus(), 100);
   };
 
-  const handleSelectChat = (id) => {
+  const handleSelectChat = (id: string) => {
     setCurrentChatId(id);
     onClose();
   };

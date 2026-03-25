@@ -6,17 +6,23 @@
 
 import apiClient from './apiClient';
 import * as SecureStore from 'expo-secure-store';
+import { loginSchema, validate, ValidationError } from '../utils/validation';
 
 /**
  * Fonction pour se connecter
  * Elle envoie les identifiants au serveur, récupère la clé et la stocke.
  */
 export const login = async (email: string, password: string) => {
-  try {
+  const validation = validate(loginSchema, { email: email.trim(), password });
+  if (!validation.success) {
+    const [field, message] = Object.entries(validation.errors!)[0]!;
+    throw new ValidationError(message, field);
+  }
 
+  try {
     const response = await apiClient.post('/auths/signin', {
-      email,
-      password,
+      email: validation.data!.email,
+      password: validation.data!.password,
     });
 
 

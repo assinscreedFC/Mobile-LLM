@@ -5,6 +5,7 @@
  */
 
 import apiClient from './apiClient';
+import { invalidateCache } from '../utils/apiCache';
 import EventSource from 'react-native-sse';
 import * as SecureStore from 'expo-secure-store';
 
@@ -70,11 +71,13 @@ export const chatService = {
       folder_id: null,
     };
     const response = await apiClient.post('/chats/new', payload);
+    invalidateCache('/chats');
     return response.data;
   },
 
   updateChat: async (chatId: string, chatData: any) => {
     const response = await apiClient.post(`/chats/${chatId}`, chatData);
+    invalidateCache('/chats');
     return response.data;
   },
 
@@ -87,6 +90,49 @@ export const chatService = {
 
   deleteChat: async (chatId: string) => {
     await apiClient.delete(`/chats/${chatId}`);
+    invalidateCache('/chats');
+  },
+
+  // --- Data Controls / Archived Chats ---
+  getArchivedChats: async (page: number = 1) => {
+    const response = await apiClient.get(
+      `/chats/archived?page=${page}&order_by=updated_at&direction=desc`
+    );
+    return response.data;
+  },
+
+  toggleArchiveChat: async (chatId: string) => {
+    const response = await apiClient.post(`/chats/${chatId}/archive`);
+    invalidateCache('/chats');
+    return response.data;
+  },
+
+  archiveAllChats: async () => {
+    const response = await apiClient.post("/chats/archive/all");
+    invalidateCache('/chats');
+    return response.data;
+  },
+
+  unarchiveAllChats: async () => {
+    const response = await apiClient.post("/chats/unarchive/all");
+    invalidateCache('/chats');
+    return response.data;
+  },
+
+  exportAllChats: async () => {
+    const response = await apiClient.get("/chats/all");
+    return response.data;
+  },
+
+  exportAllArchivedChats: async () => {
+    const response = await apiClient.get("/chats/all/archived");
+    return response.data;
+  },
+
+  importChats: async (chats: any[]) => {
+    const response = await apiClient.post("/chats/import", { chats });
+    invalidateCache('/chats');
+    return response.data;
   },
 
   uploadFile: async (uri: string, filename?: string, mimeType?: string) => {
@@ -167,7 +213,7 @@ export const chatService = {
         return;
       }
       try {
-        const json = JSON.parse(event.data);
+        const json = JSON.parse(event.data ?? '');
         const content = json.choices?.[0]?.delta?.content || '';
         const taskId = json.task_id;
         onChunk(content, taskId);
@@ -250,5 +296,11 @@ export const chatService = {
       console.error('[Chat Service] Erreur génération titre:', error);
       return null;
     }
+  },
+
+  deleteAllChats: async () => {
+    const response = await apiClient.delete("/chats/");
+    invalidateCache('/chats');
+    return response.data;
   },
 };

@@ -14,7 +14,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "associatedDomains": ["applinks:pleiade.mi.parisdescartes.fr"]
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +23,25 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.l3t1ts"
+      "package": "com.anonymous.l3t1ts",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "anis",
+              "host": "*"
+            },
+            {
+              "scheme": "https",
+              "host": "pleiade.mi.parisdescartes.fr",
+              "pathPrefix": "/chat"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,7 +49,11 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      ["expo-notifications", {
+        "icon": "./assets/icon.png",
+        "color": "#007AFF"
+      }]
     ]
   }
 }

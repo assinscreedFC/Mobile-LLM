@@ -16,29 +16,14 @@ import InputBar from '../components/InputBar';
 import ChatControlsPanel from '../components/ChatControlsPanel';
 import { useI18n } from '../i18n';
 import { useChatStore, Message } from '../store/chatStore';
+import { buildConversation, getDisplayText } from '../utils/messageHelpers';
 import MessageBubble from '../components/MessageBubble';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useResolvedTheme } from '../utils/theme';
-
-function buildConversation(userMessages: Message[], modelResponses: Record<string, string>, modelName: string): Message[] {
-  const conversation: Message[] = [];
-  for (const userMsg of userMessages) {
-    conversation.push(userMsg);
-    const aiResponse = modelResponses[userMsg.id];
-    if (aiResponse) {
-      conversation.push({ id: `${modelName}-${userMsg.id}`, role: 'assistant', content: aiResponse });
-    }
-  }
-  return conversation;
-}
-
-function getDisplayText(content: string | any[]): string {
-  if (typeof content === 'string') return content;
-  if (Array.isArray(content)) {
-    return content.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n');
-  }
-  return String(content);
-}
+import { useNotifications } from '../hooks/useNotifications';
+import { router } from 'expo-router';
+import { biometricService, biometricSession } from '../services/biometricService';
+import { useDeepLink } from '../hooks/useDeepLink';
 
 const ActionBtn = React.memo(({ icon: Icon, size = 15, color = '#AAA', onPress }: {
   icon: any; size?: number; color?: string; onPress: () => void;
@@ -50,8 +35,21 @@ const ActionBtn = React.memo(({ icon: Icon, size = 15, color = '#AAA', onPress }
 
 export default function ChatScreen() {
   const { t } = useI18n();
+  useNotifications();
+  useDeepLink();
   const { width } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Biometric lock: redirect to biometric-lock screen if enabled and not yet verified
+  useEffect(() => {
+    if (biometricSession.isVerified()) return;
+    (async () => {
+      const enabled = await biometricService.isEnabled();
+      if (enabled) {
+        router.replace('/biometric-lock');
+      }
+    })();
+  }, []);
 
   const activeModels = useChatStore((state) => state.activeModels);
   const userMessages = useChatStore((state) => state.userMessages);
@@ -79,6 +77,7 @@ export default function ChatScreen() {
 
   const scrollToBottom = useCallback((animated = true) => {
     const currentModel = activeModels[currentIndex];
+    if (!currentModel) return;
     if (scrollRefs.current[currentModel]) {
       setTimeout(() => { scrollRefs.current[currentModel]?.scrollToEnd({ animated }); }, 30);
     }

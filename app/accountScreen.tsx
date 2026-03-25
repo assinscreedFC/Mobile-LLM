@@ -1,5 +1,11 @@
+/**
+ * @author Anis Hammouche
+ * @email anishammouche50@gmail.com
+ * @github https://github.com/assinscreedFC
+ */
+
 import { useState } from 'react';
-import { SafeAreaView, View, Text, Pressable, FlatList, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView, View, Text, Pressable, FlatList, TextInput, ActivityIndicator, Alert, Switch } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -8,8 +14,9 @@ import { useResolvedTheme } from '../utils/theme';
 import { useI18n } from "../i18n/useI18n";
 import { useUIScale } from '../utils/useUIScale'
 import { useHaptics } from '../utils/useHaptics'
-import { authService } from '../services/authService';
+import { logout } from '../services/authService';
 import { adeService } from '../services/adeService';
+import { useBiometric } from '../hooks/useBiometric';
 
 
 const optionsList = [
@@ -17,7 +24,7 @@ const optionsList = [
   { id: '1', textKey: 'interface', icon: 'apps-outline', color: '#000', route: '/interfaceScreen', action: null },
   { id: '2', textKey: 'personalization', icon: 'person-circle-outline', color: '#000', route: '/personnalization', action: null },
   { id: '3', textKey: 'dataControls', icon: 'database-cog-outline', lib: 'MaterialCommunityIcons', color: '#000', route: '/data_controls', action: null },
-  { id: '4', textKey: 'about', icon: 'information-circle-outline', color: '#000', route: '/', action: null },
+  { id: '4', textKey: 'about', icon: 'information-circle-outline', color: '#000', route: '/about', action: null },
   { id: '5', textKey: 'logOut', icon: 'log-out-outline', color: '#FF0000', route: '/sign-in', action: 'logout' },
 ];
 
@@ -31,6 +38,7 @@ export default function AccountScreen() {
   const scaled48 = useUIScale(48);
   const scaleFactor = useUIScale(1);
   const { haptics } = useHaptics();
+  const { isAvailable: biometricAvailable, isEnabled: biometricEnabled, toggle: toggleBiometric } = useBiometric();
 
   // ADE state
   const [adeUser, setAdeUser] = useState('');
@@ -79,7 +87,7 @@ export default function AccountScreen() {
               <View>
                 <Pressable
                   className="flex-row items-center py-5 mb-1"
-                  onPress={() => {haptics('light'); router.push({ pathname: '/' })}}
+                  onPress={() => {haptics('light'); router.push({ pathname: '/archivedChats' })}}
                 >
                   <Ionicons name="archive-outline" size={scaled48} color={colors.text} className="mr-5 text-center" style={{width: scaled48, height: scaled48}}/>
                   <Text minimumFontScale={0.8} ellipsizeMode="tail" className="font-bold text-center" style={{color: colors.text, fontSize: scaledFontSize, marginRight:10}}>{t("archivedChats")}</Text>
@@ -97,7 +105,7 @@ export default function AccountScreen() {
               const handlePress = async () => {
                 haptics('light');
                 if (item.action === 'logout') {
-                  try { await authService.logout(); } catch (e) { console.warn('[AccountScreen] Logout error:', e); }
+                  try { await logout(); } catch (e) { console.warn('[AccountScreen] Logout error:', e); }
                   router.replace('/sign-in');
                 } else {
                   router.push({ pathname: item.route });
@@ -110,7 +118,7 @@ export default function AccountScreen() {
                   onPress={handlePress}
                 >
                   <IconComponent
-                    name={item.icon}
+                    name={item.icon as any}
                     size={scaled48}
                     color={item.color == '#FF0000'?item.color:colors.text}
                     className="mr-5 text-center"
@@ -124,6 +132,20 @@ export default function AccountScreen() {
             }}
             ListFooterComponent={
               <View style={{ marginTop: 20, paddingHorizontal: 5 }}>
+                {biometricAvailable && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, marginBottom: 10 }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{t('biometricLock')}</Text>
+                      <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2 }}>{t('biometricLockDescription')}</Text>
+                    </View>
+                    <Switch
+                      value={biometricEnabled}
+                      onValueChange={(v) => { toggleBiometric(v); }}
+                      trackColor={{ false: '#767577', true: '#4A90D9' }}
+                      thumbColor={biometricEnabled ? '#fff' : '#f4f3f4'}
+                    />
+                  </View>
+                )}
                 <View className="items-center mb-2.5">
                   <Text className="font-bold text-center" style={{ color: colors.text, fontSize: scaledFontSize }}>
                     — {t('adeConsult')} —
@@ -201,4 +223,3 @@ export default function AccountScreen() {
     </SafeAreaView>
   );
 }
-

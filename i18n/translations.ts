@@ -5,8 +5,8 @@ export const resources = {
       general: "Général",
       interface: "Interface",
       personalization: "Personnalisation",
+      account: "Compte",
       dataControls: "Contrôles des données",
-      about: "À propos",
       logOut: "Déconnexion",
       theme: "Thème",
       language: "Langue",
@@ -17,6 +17,26 @@ export const resources = {
       chinese: "Chinois",
       english: "Anglais",
       french: "Français",
+
+      /* ===== About ===== */
+      about: "À propos",
+      aboutProductVersionLabel: "PLEIADE MATH-INFO (Open WebUI) Version :",
+      aboutVersionStatus: "{{version}} (dernière version)",
+      aboutReleaseNotes: "Découvrez les nouvelles fonctionnalités",
+      aboutCheckUpdates: "Vérifier les mises à jour disponibles",
+      aboutNoUpdatesMessage: "Aucune mise à jour disponible. Version actuelle : {{version}}.",
+      aboutOllamaVersion: "Version d'Ollama",
+      aboutDiscord: "Discord",
+      aboutOpenWebUI: "Open WebUI",
+      aboutFollowOpenWebUI: "Follow @OpenWebUI",
+      aboutStarGithub: "Star us on GitHub",
+      aboutEmojiCredit: "Emoji graphics provided by Twemoji, licensed under CC-BY 4.0.",
+      aboutCopyright: "Copyright (c) 2026 Open WebUI Inc. All rights reserved.",
+      aboutCreatedBy: "Créé par Timothy J. Baek",
+      aboutCreatedByPrefix: "Créé par ",
+      aboutCreatedByName: "Timothy J. Baek",
+      aboutCreatedBySuffix: "",
+      aboutOpenRepository: "Ouvrir le dépôt",
 
       /* ===== Auth ===== */
       signInTo: "Se connecter à",
@@ -37,6 +57,14 @@ export const resources = {
         "Veuillez vérifier vos identifiants ou votre connexion internet.",
       back: "Retour",
       backToSignIn: "Retour à la connexion",
+      invalidEmail: "Adresse email invalide",
+      emailRequired: "L'adresse email est requise",
+      passwordTooShort: "Le mot de passe doit contenir au moins 6 caractères",
+      passwordNeedsUppercase: "Le mot de passe doit contenir au moins une majuscule",
+      passwordNeedsNumber: "Le mot de passe doit contenir au moins un chiffre",
+      nameRequired: "Le nom est requis",
+      nameTooShort: "Le nom doit contenir au moins 2 caractères",
+      validationError: "Erreur de validation",
 
       /* ===== Pending ===== */
       pleaseWait: "Veuillez patienter",
@@ -83,6 +111,12 @@ export const resources = {
       shareChat: "Partager le chat",
       exportChat: "Exporter le chat",
       deleteChat: "Supprimer ce chat",
+      deleteChatConfirm: "Supprimer cette conversation ? Cette action est irréversible.",
+      switchModel: "Changer le modèle",
+      searchModel: "Rechercher un modèle...",
+      loadingModels: "Chargement des modèles...",
+      noModelFound: "Aucun modèle trouvé",
+      model: "Modèle",
 
       // Missing keys
       precise: "Précis",
@@ -223,12 +257,38 @@ export const resources = {
       adeFillCredentials: "Remplis ton identifiant et mot de passe CAS.",
       adeCasDescription: "Entre tes identifiants CAS Paris Cité pour accéder à ton emploi du temps.",
       adeCasPlaceholder: "Identifiant CAS (ex: prenom.nom)",
-      switchModel: "Changer le modèle",
-      searchModel: "Rechercher un modèle...",
-      loadingModels: "Chargement des modèles...",
-      noModelFound: "Aucun modèle trouvé",
-      model: "Modèle",
-      deleteChatConfirm: "Supprimer cette conversation ? Cette action est irréversible.",
+
+      /* ===== Data Controls ===== */
+      importChats: "Importer les discussions",
+      exportChats: "Exporter les discussions",
+      archiveAllChats: "Archiver toutes les discussions",
+      deleteAllChats: "Supprimer toutes les discussions",
+      confirmUnarchiveAllArchivedChats: "Voulez-vous vraiment désarchiver toutes les discussions archivées ?",
+      confirmExportAllArchivedChats: "Voulez-vous vraiment exporter toutes les discussions archivées ?",
+      confirmArchiveAllChats: "Voulez-vous vraiment archiver toutes les discussions ?",
+      confirmDeleteAllChats: "Voulez-vous vraiment supprimer toutes les discussions ?",
+      invalidImportFile: "Fichier d’import invalide.",
+      importChatsSuccess: "Importation des discussions réussie.",
+      importChatsError: "Échec de l’importation des discussions.",
+
+      /* ===== Notifications ===== */
+      notificationPermission: "Autorisation de notifications",
+      notificationPermissionDesc: "Autorisez les notifications pour recevoir des alertes",
+      notificationNewMessage: "Nouveau message",
+
+      /* ===== Deep Linking ===== */
+      deepLinkError: "Impossible d'ouvrir ce lien",
+      deepLinkChatNotFound: "Conversation non trouvée",
+
+      /* ===== Biometric ===== */
+      biometricLock: "Verrouillage biométrique",
+      biometricLockDescription: "Utiliser l'empreinte digitale ou Face ID pour déverrouiller",
+      biometricPrompt: "Authentifiez-vous pour continuer",
+      biometricTitle: "Authentification requise",
+      biometricSubtitle: "Utilisez votre empreinte digitale ou Face ID",
+      biometricFailed: "Échec de l'authentification",
+      biometricRetry: "Réessayer",
+      biometricUsePassword: "Utiliser le mot de passe",
     },
   },
 
@@ -238,8 +298,8 @@ export const resources = {
       general: "General",
       interface: "Interface",
       personalization: "Personalization",
+      account: "Account",
       dataControls: "Data Controls",
-      about: "About",
       logOut: "Log out",
       theme: "Theme",
       language: "Language",
@@ -250,6 +310,26 @@ export const resources = {
       chinese: "Chinese",
       english: "English",
       french: "French",
+
+      /* ===== About ===== */
+      about: "About",
+      aboutProductVersionLabel: "PLEIADE MATH-INFO (Open WebUI) Version:",
+      aboutVersionStatus: "{{version}} (latest version)",
+      aboutReleaseNotes: "Discover what's new",
+      aboutCheckUpdates: "Check for available updates",
+      aboutNoUpdatesMessage: "No update available. Current version: {{version}}.",
+      aboutOllamaVersion: "Ollama Version",
+      aboutDiscord: "Discord",
+      aboutOpenWebUI: "Open WebUI",
+      aboutFollowOpenWebUI: "Follow @OpenWebUI",
+      aboutStarGithub: "Star us on GitHub",
+      aboutEmojiCredit: "Emoji graphics provided by Twemoji, licensed under CC-BY 4.0.",
+      aboutCopyright: "Copyright (c) 2026 Open WebUI Inc. All rights reserved.",
+      aboutCreatedBy: "Created by Timothy J. Baek",
+      aboutCreatedByPrefix: "Created by ",
+      aboutCreatedByName: "Timothy J. Baek",
+      aboutCreatedBySuffix: "",
+      aboutOpenRepository: "Open repository",
 
       /* ===== Auth ===== */
       signInTo: "Sign in to",
@@ -269,6 +349,14 @@ export const resources = {
       loginFailedDesc: "Check your credentials or internet connection.",
       back: "Back",
       backToSignIn: "Back to Sign in",
+      invalidEmail: "Invalid email address",
+      emailRequired: "Email address is required",
+      passwordTooShort: "Password must be at least 6 characters",
+      passwordNeedsUppercase: "Password must contain at least one uppercase letter",
+      passwordNeedsNumber: "Password must contain at least one number",
+      nameRequired: "Name is required",
+      nameTooShort: "Name must be at least 2 characters",
+      validationError: "Validation error",
 
       /* ===== Pending ===== */
       pleaseWait: "Please wait",
@@ -301,6 +389,12 @@ export const resources = {
       shareChat: "Share Chat",
       exportChat: "Export Chat",
       deleteChat: "Delete this chat",
+      deleteChatConfirm: "Delete this conversation? This action cannot be undone.",
+      switchModel: "Switch model",
+      searchModel: "Search a model...",
+      loadingModels: "Loading models...",
+      noModelFound: "No model found",
+      model: "Model",
       precise: "Precise",
       balanced: "Balanced",
       creative: "Creative",
@@ -430,12 +524,38 @@ export const resources = {
       adeFillCredentials: "Please fill in your CAS username and password.",
       adeCasDescription: "Enter your CAS Paris Cité credentials to access your schedule.",
       adeCasPlaceholder: "CAS ID (e.g. firstname.lastname)",
-      switchModel: "Switch model",
-      searchModel: "Search a model...",
-      loadingModels: "Loading models...",
-      noModelFound: "No model found",
-      model: "Model",
-      deleteChatConfirm: "Delete this conversation? This action cannot be undone.",
+
+      /* ===== Data Controls ===== */
+      importChats: "Import Chats",
+      exportChats: "Export Chats",
+      archiveAllChats: "Archive All Chats",
+      deleteAllChats: "Delete All Chats",
+      confirmUnarchiveAllArchivedChats: "Are you sure you want to unarchive all archived chats?",
+      confirmExportAllArchivedChats: "Are you sure you want to export all archived chats?",
+      confirmArchiveAllChats: "Are you sure you want to archive all chats?",
+      confirmDeleteAllChats: "Are you sure you want to delete all chats?",
+      invalidImportFile: "Invalid import file.",
+      importChatsSuccess: "Chats imported successfully.",
+      importChatsError: "Failed to import chats.",
+
+      /* ===== Notifications ===== */
+      notificationPermission: "Notification Permission",
+      notificationPermissionDesc: "Allow notifications to receive alerts",
+      notificationNewMessage: "New message",
+
+      /* ===== Deep Linking ===== */
+      deepLinkError: "Unable to open this link",
+      deepLinkChatNotFound: "Chat not found",
+
+      /* ===== Biometric ===== */
+      biometricLock: "Biometric Lock",
+      biometricLockDescription: "Use fingerprint or Face ID to unlock",
+      biometricPrompt: "Authenticate to continue",
+      biometricTitle: "Authentication required",
+      biometricSubtitle: "Use your fingerprint or Face ID",
+      biometricFailed: "Authentication failed",
+      biometricRetry: "Retry",
+      biometricUsePassword: "Use password",
     },
   },
 
@@ -445,8 +565,8 @@ export const resources = {
       general: "通用",
       interface: "界面",
       personalization: "个性化",
+      account: "账户",
       dataControls: "数据控制",
-      about: "关于",
       logOut: "退出登录",
       theme: "主题",
       language: "语言",
@@ -457,6 +577,26 @@ export const resources = {
       chinese: "中文",
       english: "英语",
       french: "法语",
+
+      /* ===== About ===== */
+      about: "关于",
+      aboutProductVersionLabel: "PLEIADE MATH-INFO（Open WebUI）版本：",
+      aboutVersionStatus: "{{version}}（最新版本）",
+      aboutReleaseNotes: "查看新功能",
+      aboutCheckUpdates: "检查可用更新",
+      aboutNoUpdatesMessage: "当前没有可用更新。当前版本：{{version}}。",
+      aboutOllamaVersion: "Ollama 版本",
+      aboutDiscord: "Discord",
+      aboutOpenWebUI: "Open WebUI",
+      aboutFollowOpenWebUI: "关注 @OpenWebUI",
+      aboutStarGithub: "在 GitHub 上 Star",
+      aboutEmojiCredit: "Emoji 图形由 Twemoji 提供，并采用 CC-BY 4.0 许可。",
+      aboutCopyright: "Copyright (c) 2026 Open WebUI Inc. 保留所有权利。",
+      aboutCreatedBy: "由 Timothy J. Baek 创建",
+      aboutCreatedByPrefix: "由 ",
+      aboutCreatedByName: "Timothy J. Baek",
+      aboutCreatedBySuffix: " 创建",
+      aboutOpenRepository: "打开代码仓库",
 
       /* ===== Auth ===== */
       signInTo: "登录到",
@@ -476,6 +616,14 @@ export const resources = {
       loginFailedDesc: "请检查您的账号信息或网络连接。",
       back: "返回",
       backToSignIn: "返回登录",
+      invalidEmail: "邮箱地址无效",
+      emailRequired: "邮箱地址为必填项",
+      passwordTooShort: "密码至少需要6个字符",
+      passwordNeedsUppercase: "密码必须包含至少一个大写字母",
+      passwordNeedsNumber: "密码必须包含至少一个数字",
+      nameRequired: "姓名为必填项",
+      nameTooShort: "姓名至少需要2个字符",
+      validationError: "验证错误",
 
       /* ===== Pending ===== */
       pleaseWait: "请稍候",
@@ -508,6 +656,12 @@ export const resources = {
       shareChat: "分享对话",
       exportChat: "导出对话",
       deleteChat: "删除该对话",
+      deleteChatConfirm: "删除此对话？此操作不可撤销。",
+      switchModel: "切换模型",
+      searchModel: "搜索模型...",
+      loadingModels: "加载模型中...",
+      noModelFound: "未找到模型",
+      model: "模型",
       precise: "精确",
       balanced: "平衡",
       creative: "创意",
@@ -592,6 +746,7 @@ export const resources = {
       iface_emoji_in_call: "通话中显示表情符号",
       iface_sep_image: "图片",
       iface_image_compression: "图片压缩",
+
       /* ===== Personnalization ===== */
       persoMemoryTitle: "记忆",
       persoExperimental: "实验功能",
@@ -633,12 +788,42 @@ export const resources = {
       adeFillCredentials: "请填写你的 CAS 用户名和密码。",
       adeCasDescription: "输入你的 CAS Paris Cité 账号以访问课程表。",
       adeCasPlaceholder: "CAS 账号 (例: prenom.nom)",
-      switchModel: "切换模型",
-      searchModel: "搜索模型...",
-      loadingModels: "加载模型中...",
-      noModelFound: "未找到模型",
-      model: "模型",
-      deleteChatConfirm: "删除此对话？此操作不可撤销。",
+
+      /* ===== Data Controls ===== */
+      importChats: "导入聊天",
+      exportChats: "导出聊天",
+      archiveAllChats: "归档所有聊天",
+      deleteAllChats: "删除所有聊天",
+      confirmUnarchiveAllArchivedChats: "你确认要取消归档所有已归档聊天吗？",
+      confirmExportAllArchivedChats: "你确认要导出所有已归档聊天吗？",
+      confirmArchiveAllChats: "你确认要归档所有聊天吗？",
+      confirmDeleteAllChats: "你确认要删除所有聊天吗？",
+      invalidImportFile: "导入文件格式无效。",
+      importChatsSuccess: "聊天导入成功。",
+      importChatsError: "聊天导入失败。",
+
+      /* ===== Notifications ===== */
+      notificationPermission: "通知权限",
+      notificationPermissionDesc: "允许通知以接收提醒",
+      notificationNewMessage: "新消息",
+
+      /* ===== Deep Linking ===== */
+      deepLinkError: "无法打开此链接",
+      deepLinkChatNotFound: "未找到对话",
+
+      /* ===== Biometric ===== */
+      biometricLock: "生物识别锁",
+      biometricLockDescription: "使用指纹或面容 ID 解锁",
+      biometricPrompt: "请验证身份以继续",
+      biometricTitle: "需要身份验证",
+      biometricSubtitle: "使用您的指纹或面容 ID",
+      biometricFailed: "身份验证失败",
+      biometricRetry: "重试",
+      biometricUsePassword: "使用密码",
     },
   },
 } as const;
+
+export const translations = resources;
+export type Language = keyof typeof resources;
+export type TranslationKey = keyof typeof resources['fr']['translation'];

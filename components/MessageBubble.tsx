@@ -39,7 +39,7 @@ function parseContent(raw: string): ContentBlock[] {
       blocks.push({ type: 'text', value: raw.slice(lastIndex, match.index) });
     }
 
-    const token = match[1];
+    const token = match[1] ?? match[0];
     let mathContent: string;
     let blockType: ContentBlock['type'];
 
