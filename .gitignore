@@ -31,11 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
 .env*.local
-
-# docs (notes internes, jamais commite)
-docs/
 
 # typescript
 *.tsbuildinfo

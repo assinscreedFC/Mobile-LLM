@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   Switch,
@@ -345,11 +344,11 @@ export default function PersonnalizationScreen() {
   const isManageDisabled = !isMemoryEnabled;
 
   return (
-    <SafeAreaView style={[styles.screen, { backgroundColor: colors.bg }]}>
-      <View>
+    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => router.replace("/accountScreen")}
+            onPress={() => router.back()}
             style={[
               styles.backButton,
               { backgroundColor: colors.card, borderColor: colors.border },
@@ -359,57 +358,72 @@ export default function PersonnalizationScreen() {
           </Pressable>
         </View>
 
-        <View
-          style={[
-            styles.memoryCard,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.titleGroup}>
-              <Text style={[styles.title, { color: colors.text }]}>
-                {t("persoMemoryTitle")}{" "}
-                <Text style={[styles.experimental, { color: colors.subtext }]}>
-                  ({t("persoExperimental")})
-                </Text>
-              </Text>
+        <Text style={[styles.pageTitle, { color: colors.text }]}>
+          — {t("personalization")} —
+        </Text>
 
-              <Text style={[styles.description, { color: colors.subtext }]}>
-                {t("persoDescription")}
-              </Text>
-            </View>
-
-            <Switch value={isMemoryEnabled} onValueChange={setIsMemoryEnabled} />
-          </View>
-
-          <Pressable
+        <View style={styles.content}>
+          <View
             style={[
-              styles.manageButton,
-              isManageDisabled && styles.disabledButton,
+              styles.memoryCard,
               { backgroundColor: colors.card, borderColor: colors.border },
             ]}
-            disabled={isManageDisabled}
-            onPress={() => setIsManageModalVisible(true)}
           >
-            <Text style={[styles.manageButtonText, { color: colors.text }]}>
-              {t("persoManage")}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+            <View style={styles.cardHeader}>
+              <View style={styles.titleGroup}>
+                <Text style={[styles.title, { color: colors.text }]}>
+                  {t("persoMemoryTitle")}{" "}
+                  <Text style={[styles.experimental, { color: colors.subtext }]}>
+                    ({t("persoExperimental")})
+                  </Text>
+                </Text>
 
-      <View style={styles.footer}>
-        <Pressable
-          style={[
-            styles.saveButton,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-          onPress={() => Alert.alert(t("persoSave"), t("persoSaveMessage"))}
-        >
-          <Text style={[styles.saveButtonText, { color: colors.text }]}>
-            {t("persoSave")}
-          </Text>
-        </Pressable>
+                <Text style={[styles.description, { color: colors.subtext }]}>
+                  {t("persoDescription")}
+                </Text>
+              </View>
+
+              <Switch
+                value={isMemoryEnabled}
+                onValueChange={setIsMemoryEnabled}
+                trackColor={{
+                  false: colors.subtext,
+                  true: colors.subaccent,
+                }}
+                thumbColor={isMemoryEnabled ? colors.accent : colors.text}
+                ios_backgroundColor={colors.subtext}
+              />
+            </View>
+
+            <Pressable
+              style={[
+                styles.manageButton,
+                isManageDisabled && styles.disabledButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              disabled={isManageDisabled}
+              onPress={() => setIsManageModalVisible(true)}
+            >
+              <Text style={[styles.manageButtonText, { color: colors.text }]}>
+                {t("persoManage")}
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.footer}>
+            <Pressable
+              style={[
+                styles.saveButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              onPress={() => Alert.alert(t("persoSave"), t("persoSaveMessage"))}
+            >
+              <Text style={[styles.saveButtonText, { color: colors.text }]}>
+                {t("persoSave")}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
 
       <ManageMemoryModal
@@ -418,19 +432,25 @@ export default function PersonnalizationScreen() {
         memories={memories}
         setMemories={setMemories}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  container: {
+    flex: 1,
     paddingHorizontal: 20,
-    justifyContent: "space-between",
+    marginTop: 60,
   },
   header: {
-    marginTop: 20,
     alignItems: "flex-start",
+  },
+  content: {
+    flex: 1,
+    justifyContent: "space-between",
   },
   backButton: {
     width: 40,
@@ -445,8 +465,14 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  memoryCard: {
+  pageTitle: {
+    fontSize: 22,
+    fontWeight: "600",
     marginTop: 20,
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  memoryCard: {
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,

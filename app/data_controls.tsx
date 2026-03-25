@@ -1,4 +1,6 @@
-import { View, Text, Pressable } from 'react-native';
+import React, { useState } from "react";
+import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Ionicons,
@@ -6,112 +8,308 @@ import {
   Fontisto
 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import * as DocumentPicker from "expo-document-picker";
 
-const dataControlOptions = [
-  {
-    id: '0',
-    text: 'Import Chats',
-    icon: 'import',
-    lib: 'Fontisto',
-    color: '#000',
-    route: null,
-  },
-  {
-    id: '1',
-    text: 'Export Chats',
-    icon: 'export',
-    lib: 'Fontisto',
-    color: '#000',
-    route: null,
-  },
-  {
-    id: '2',
-    text: 'Archived Chats',
-    icon: 'archive',
-    lib: 'Feather',
-    color: '#000',
-    route: null,
-  },
-  {
-    id: '3',
-    text: 'Archive All Chats',
-    icon: 'archive-outline',
-    lib: 'Ionicons',
-    color: '#000',
-    route: null,
-  },
-  {
-    id: '4',
-    text: 'Delete All Chats',
-    icon: 'trash-outline',
-    lib: 'Ionicons',
-    color: '#000',
-    route: null,
-  },
-] as const;
+import SettingsConfirmModal from "../components/SettingsConfirmModal";
+import { useSettingsStore } from "../store/useSettingsStore";
+import { useResolvedTheme } from "../utils/theme";
+import { useI18n } from "../i18n/useI18n";
+import { chatService } from "../services/chatService";
+import { useChatStore } from "../store/chatStore";
 
 export default function DataControlsScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { themeMode } = useSettingsStore();
+  const { colors } = useResolvedTheme(themeMode);
+  const { archiveAllChats, deleteAllChats, fetchHistory, fetchArchivedChats } = useChatStore();
+  const { t } = useI18n();
+  const [confirmMode, setConfirmMode] = useState<"archiveAll" | "deleteAll" | null>(null);
+
+  const dataControlOptions = [
+      {
+        id: "0",
+        text: t("importChats"),
+        icon: "import",
+        lib: "Fontisto",
+        route: null,
+        danger: false,
+      },
+      {
+        id: "1",
+        text: t("exportChats"),
+        icon: "export",
+        lib: "Fontisto",
+        route: null,
+        danger: false,
+      },
+      {
+        id: "2",
+        text: t("archivedChats"),
+        icon: "archive",
+        lib: "Feather",
+        route: "/archivedChats",
+        danger: false,
+      },
+      {
+        id: "3",
+        text: t("archiveAllChats"),
+        icon: "archive-outline",
+        lib: "Ionicons",
+        route: null,
+        danger: false,
+      },
+      {
+        id: "4",
+        text: t("deleteAllChats"),
+        icon: "trash-outline",
+        lib: "Ionicons",
+        route: null,
+        danger: true,
+      },
+    ] as const;
 
   const renderIcon = (item: typeof dataControlOptions[number]) => {
+    const iconColor = item.danger ? "#DC2626" : colors.text;
+
     switch (item.lib) {
-      case 'Feather':
-        return <Feather name={item.icon} size={34} color={item.color} />;
-
-      case 'Ionicons':
-        return <Ionicons name={item.icon} size={34} color={item.color} />;
-
-      case 'Fontisto':
-        return <Fontisto name={item.icon} size={34} color={item.color} />;
-
+      case "Feather":
+        return <Feather name={item.icon} size={22} color={iconColor} />;
+      case "Ionicons":
+        return <Ionicons name={item.icon} size={22} color={iconColor} />;
+      case "Fontisto":
+        return <Fontisto name={item.icon} size={20} color={iconColor} />;
       default:
         return null;
     }
   };
+  const handleArchiveAll = async () => {
+    try {
+      await archiveAllChats();
+      setConfirmMode(null);  
+    } catch (error) {
+      console.error("Error archiving all chats:", error);
+    }
+  };
+
+  const handleImportChats = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/json",
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) return;
+
+      const file = result.assets?.[0];
+      if (!file?.uri) return;
+
+      const content = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      const parsed = JSON.parse(content);
+
+      const chats = Array.isArray(parsed) ? parsed : parsed?.chats;
+
+      if (!Array.isArray(chats)) {
+        Alert.alert(t("importChats"), t("invalidImportFile"));
+        return;
+      }
+
+      await chatService.importChats(chats);
+      await fetchHistory();
+      await fetchArchivedChats();
+
+      Alert.alert(t("importChats"), t("importChatsSuccess"));
+    } catch (error) {
+      console.error("Error importing chats:", error);
+      Alert.alert(t("importChats"), t("importChatsError"));
+    }
+  };
+  const handleExportAll = async () => {
+    try {
+      const data = await chatService.exportAllChats();
+
+      const json = JSON.stringify(data, null, 2);
+      const fileUri = FileSystem.documentDirectory + "all-chats-export.json";
+
+      await FileSystem.writeAsStringAsync(fileUri, json, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(fileUri, {
+          mimeType: "application/json",
+          dialogTitle: t("exportChats"),
+        });
+      }
+    } catch (error) {
+      console.error("Error exporting all chats:", error);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    try {
+      await deleteAllChats();
+      setConfirmMode(null);
+    } catch (error) {
+      console.error("Error deleting all chats:", error);
+    }
+  };
 
   return (
-    <SafeAreaView
-      className="flex-1 bg-white"
-      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
-    >
-      <View className="flex-1 bg-white px-6">
-        {/* Header */}
-        <View className="flex-row justify-end items-center pt-2">
-          <Pressable onPress={() => router.back()} className="p-2">
-            <Ionicons name="close" size={36} color="black" />
+    <SafeAreaView style={[styles.screen, { backgroundColor: colors.bg }]}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => router.back()}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <ChevronLeft size={22} color={colors.text} strokeWidth={2.5} />
           </Pressable>
         </View>
 
-        {/* Options */}
-        <View className="pt-8 items-start">
+        <Text style={[styles.title, { color: colors.text }]}>
+          - {t("dataControls")} -   
+        </Text>
+
+        <View style={styles.content}>
           {dataControlOptions.map((item) => (
             <Pressable
               key={item.id}
-              className="flex-row items-center py-6"
+              style={[styles.item, { backgroundColor: colors.card }]}
               onPress={() => {
+                if (item.id === "0") {
+                  handleImportChats();
+                  return;
+                }
+
+                if (item.id === "1") {
+                  handleExportAll();
+                  return;
+                }
+
+                if (item.id === "3") {
+                  setConfirmMode("archiveAll");
+                  return;
+                }
+
+                if (item.id === "4") {
+                  setConfirmMode("deleteAll");
+                  return;
+                }
+
                 if (item.route) {
                   router.push(item.route);
                 }
               }}
             >
-              <View
-                style={{
-                  width: 40,
-                  marginRight: 20,
-                  alignItems: 'center',
-                }}
-              >
-                {renderIcon(item)}
+              <View style={styles.left}>
+                <View style={styles.iconWrapper}>{renderIcon(item)}</View>
+                <Text
+                  style={[
+                    styles.label,
+                    { color: item.danger ? "#DC2626" : colors.text },
+                  ]}
+                >
+                  {item.text}
+                </Text>
               </View>
 
-              <Text className="text-[17px] font-semibold text-black">
-                {item.text}
-              </Text>
+              <ChevronRight size={18} color={colors.subtext} />
             </Pressable>
           ))}
         </View>
       </View>
+      <SettingsConfirmModal
+        visible={confirmMode === "archiveAll"}
+        title={t("dataControls")}
+        message={t("confirmArchiveAllChats")}
+        cancelText={t("cancel")}
+        confirmText={t("archiveAllChats")}
+        onCancel={() => setConfirmMode(null)}
+        onConfirm={handleArchiveAll}
+        colors={colors}
+      />
+
+      <SettingsConfirmModal
+        visible={confirmMode === "deleteAll"}
+        title={t("dataControls")}
+        message={t("confirmDeleteAllChats")}
+        cancelText={t("cancel")}
+        confirmText={t("deleteAllChats")}
+        onCancel={() => setConfirmMode(null)}
+        onConfirm={handleDeleteAll}
+        colors={colors}
+        danger
+      />
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+  header: {
+    alignItems: "flex-start",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "600",
+    marginTop: 20,
+    marginBottom: 24,
+    textAlign: "center",
+  },
+  content: {
+    flex: 1,
+  },
+  item: {
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    marginBottom: 14,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  left: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  iconWrapper: {
+    width: 28,
+    marginRight: 14,
+    alignItems: "center",
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+});

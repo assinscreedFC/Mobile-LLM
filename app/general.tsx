@@ -66,7 +66,7 @@ export default function General() {
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
         <Pressable
-          onPress={() => router.replace("/accountScreen")}
+          onPress={() => router.back()}
           style={[
             styles.backButton,
             { backgroundColor: colors.card, borderColor: colors.border },
@@ -76,7 +76,7 @@ export default function General() {
         </Pressable>
       </View>
 
-      <Text style={[styles.title, { color: colors.text }]}>{t("general")}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>— {t("general")} —</Text>
 
       <TouchableOpacity
         style={[styles.item, { backgroundColor: colors.card }]}
@@ -102,7 +102,16 @@ export default function General() {
 
       <View style={[styles.item, { backgroundColor: colors.card }]}>
         <Text style={[styles.label, { color: colors.text }]}>{t("notifications")}</Text>
-        <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} />
+        <Switch
+          value={notificationsEnabled}
+          onValueChange={setNotificationsEnabled}
+          trackColor={{
+            false: colors.subtext,
+            true: colors.subaccent,
+          }}
+          thumbColor={notificationsEnabled ? colors.accent : colors.text}
+          ios_backgroundColor={colors.subtext}
+        />
       </View>
 
       <Modal visible={themeVisible} transparent animationType="fade">
@@ -177,6 +186,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginTop: 20,
     marginBottom: 24,
+    textAlign: "center",
   },
   item: {
     borderRadius: 16,
