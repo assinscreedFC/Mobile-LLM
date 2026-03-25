@@ -94,10 +94,16 @@ export default function ChatScreen() {
     if (isTyping) scrollToBottom(false);
   }, [modelResponses, isTyping, scrollToBottom]);
 
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleCopy = useCallback(async (msgId: string, text: string) => {
     await Clipboard.setStringAsync(text);
     setCopiedMsgId(msgId);
-    setTimeout(() => setCopiedMsgId(null), 1500);
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    copyTimeoutRef.current = setTimeout(() => setCopiedMsgId(null), 1500);
+  }, []);
+
+  useEffect(() => {
+    return () => { if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current); };
   }, []);
 
   const handleReadAloud = useCallback(async (msgId: string, text: string) => {
@@ -161,13 +167,15 @@ export default function ChatScreen() {
           return (
             <View style={{ width, flex: 1 }}>
               <FlatList
-
                 data={reversedConversation}
                 inverted={true}
                 keyExtractor={(msg) => msg.id}
                 contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 20, paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}
                 keyboardDismissMode="interactive"
+                initialNumToRender={10}
+                maxToRenderPerBatch={5}
+                windowSize={7}
 
 
                 ListEmptyComponent={() => (

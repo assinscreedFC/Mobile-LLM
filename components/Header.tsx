@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Pressable, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, Modal, Alert } from 'react-native';
 import { Menu, ChevronDown, Plus, User, Edit3, MoreVertical, SlidersHorizontal, Share2, Download, Trash2 } from 'lucide-react-native';
 import ModelSelector from './ModelSelector';
 import Sidebar from './Sidebar';
@@ -40,12 +40,25 @@ export default function Header({
   const switchModel = useChatStore((state) => state.switchModel);
   const startNewChat = useChatStore((state) => state.startNewChat);
 
-  const handleDeleteChat = async () => {
-    const currentChatId = useChatStore.getState().currentChatId;
-    if (currentChatId) {
-      await chatService.deleteChat(currentChatId);
-    }
-    startNewChat();
+  const handleDeleteChat = () => {
+    Alert.alert(
+      t('deleteChat'),
+      t('deleteChatConfirm'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('deleteChat'),
+          style: 'destructive',
+          onPress: async () => {
+            const currentChatId = useChatStore.getState().currentChatId;
+            if (currentChatId) {
+              await chatService.deleteChat(currentChatId);
+            }
+            startNewChat();
+          },
+        },
+      ]
+    );
   };
 
   const themeMode = useSettingsStore(state => state.themeMode);

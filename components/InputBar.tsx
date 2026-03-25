@@ -92,8 +92,6 @@ export default function InputBar({ t = (k) => k }: InputBarProps) {
       sendMessage(inputText.trim());
       setInputText('');
       if (isExpanded) handleCollapse();
-    } else {
-      console.log("Micro activé");
     }
   };
 
