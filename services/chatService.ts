@@ -187,16 +187,10 @@ export const chatService = {
 
   chatCompleted: async (payload: any) => {
     try {
-      const token = await SecureStore.getItemAsync('token');
-      const response = await fetch(`${BASE_URL_CHAT}/chat/completed`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+      const response = await apiClient.post('/chat/completed', payload, {
+        baseURL: BASE_URL_CHAT,
       });
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('[Chat Service] Erreur chat completed:', error);
       return null;
@@ -205,14 +199,8 @@ export const chatService = {
 
   stopTask: async (taskId: string) => {
     try {
-      const token = await SecureStore.getItemAsync('token');
-      await fetch(`${BASE_URL_CHAT}/chat/stop`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ task_id: taskId }),
+      await apiClient.post('/chat/stop', { task_id: taskId }, {
+        baseURL: BASE_URL_CHAT,
       });
     } catch (error) {
       console.error('[Chat Service] Erreur stop task:', error);

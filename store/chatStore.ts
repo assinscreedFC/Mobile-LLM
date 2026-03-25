@@ -111,6 +111,89 @@ export interface Attachment {
   base64?: string;
 }
 
+function buildModelItem(modelName: string, visionEnabled: boolean) {
+  return {
+    id: modelName,
+    name: modelName,
+    object: 'model',
+    connection_type: 'local',
+    tags: [],
+    info: {
+      id: modelName,
+      name: modelName,
+      meta: {
+        capabilities: {
+          vision: visionEnabled,
+          file_upload: true,
+          web_search: true,
+          image_generation: true,
+          code_interpreter: true,
+          citations: true,
+        },
+      },
+    },
+    actions: [],
+    filters: [],
+  };
+}
+
+function buildHistoryPayload(
+  allUserMsgs: Message[],
+  allModelResponses: Record<string, Record<string, string>>,
+  activeModels: string[],
+  stableIds: Map<string, string>,
+  timestamp: number,
+) {
+  const historyMessages: Record<string, any> = {};
+  const messagesArray: any[] = [];
+  let prevMsgId: string | null = null;
+
+  for (const um of allUserMsgs) {
+    const umObj: any = {
+      id: um.id,
+      parentId: prevMsgId,
+      childrenIds: [],
+      role: 'user',
+      content: typeof um.content === 'string' ? um.content : JSON.stringify(um.content),
+      timestamp,
+      models: activeModels,
+    };
+
+    const responseIds: string[] = [];
+    for (const mn of activeModels) {
+      if (allModelResponses[mn]?.[um.id]) {
+        const aId = stableIds.get(`${mn}::${um.id}`) ?? generateUUID();
+        responseIds.push(aId);
+
+        const aObj: any = {
+          parentId: um.id,
+          id: aId,
+          childrenIds: [],
+          role: 'assistant',
+          content: allModelResponses[mn][um.id],
+          model: mn,
+          modelName: mn,
+          modelIdx: activeModels.indexOf(mn),
+          timestamp,
+        };
+        historyMessages[aId] = aObj;
+        messagesArray.push(aObj);
+        prevMsgId = aId;
+      }
+    }
+
+    umObj.childrenIds = responseIds;
+    historyMessages[um.id] = umObj;
+    messagesArray.splice(messagesArray.length - responseIds.length, 0, umObj);
+  }
+
+  const lastMsgId = messagesArray.length > 0
+    ? messagesArray[messagesArray.length - 1].id
+    : null;
+
+  return { historyMessages, messagesArray, lastMsgId };
+}
+
 interface ChatState {
   currentChatId: string | null;
   userMessages: Message[];
@@ -325,29 +408,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       let fullContent = '';
       const assistantMsgId = stableAssistantIds.get(`${modelName}::${userMsgId}`)!;
 
-      const modelItem = {
-        id: modelName,
-        name: modelName,
-        object: 'model',
-        connection_type: 'local',
-        tags: [],
-        info: {
-          id: modelName,
-          name: modelName,
-          meta: {
-            capabilities: {
-              vision: get().modelVision[modelName] ?? false,
-              file_upload: true,
-              web_search: true,
-              image_generation: true,
-              code_interpreter: true,
-              citations: true,
-            },
-          },
-        },
-        actions: [],
-        filters: [],
-      };
+      const modelItem = buildModelItem(modelName, get().modelVision[modelName] ?? false);
 
       const streamPayload: any = {
         model: modelName,
@@ -528,61 +589,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
           try {
             const allUserMsgs = get().userMessages;
             const allModelResponses = get().modelResponses;
-            const historyMessages: Record<string, any> = {};
-            const messagesArray: any[] = [];
-
-            let prevMsgId: string | null = null;
-            for (const um of allUserMsgs) {
-              const umObj: any = {
-                id: um.id,
-                parentId: prevMsgId,
-                childrenIds: [],
-                role: 'user',
-                content: typeof um.content === 'string' ? um.content : JSON.stringify(um.content),
-                timestamp,
-                models: activeModels,
-              };
-
-              const responseIds: string[] = [];
-              for (const mn of activeModels) {
-                if (allModelResponses[mn]?.[um.id]) {
-                  // Use stable pre-generated IDs — avoids UUID churn across concurrent closes
-                  const aId = stableAssistantIds.get(`${mn}::${um.id}`) ?? generateUUID();
-                  responseIds.push(aId);
-
-                  const aObj: any = {
-                    parentId: um.id,
-                    id: aId,
-                    childrenIds: [],
-                    role: 'assistant',
-                    content: allModelResponses[mn][um.id],
-                    model: mn,
-                    modelName: mn,
-                    modelIdx: activeModels.indexOf(mn),
-                    timestamp,
-                  };
-                  historyMessages[aId] = aObj;
-                  messagesArray.push(aObj);
-                  prevMsgId = aId;
-                }
-              }
-
-              umObj.childrenIds = responseIds;
-              historyMessages[um.id] = umObj;
-              messagesArray.splice(messagesArray.length - responseIds.length, 0, umObj);
-            }
-
-            const lastMsgId = messagesArray.length > 0
-              ? messagesArray[messagesArray.length - 1].id
-              : null;
+            const { historyMessages, messagesArray, lastMsgId } = buildHistoryPayload(
+              allUserMsgs, allModelResponses, activeModels, stableAssistantIds, timestamp,
+            );
 
             await chatService.updateChat(currentChatId, {
               chat: {
                 models: activeModels,
-                history: {
-                  messages: historyMessages,
-                  currentId: lastMsgId,
-                },
+                history: { messages: historyMessages, currentId: lastMsgId },
                 messages: messagesArray,
                 params: {},
                 files: uploadedFiles.length > 0 ? uploadedFiles : [],
@@ -745,12 +759,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       let fullContent = '';
       const assistantMsgId = regenStableIds.get(`${modelName}::${userMsgId}`)!;
 
-      const modelItem = {
-        id: modelName, name: modelName, object: 'model',
-        connection_type: 'local', tags: [],
-        info: { id: modelName, name: modelName, meta: { capabilities: { vision: get().modelVision[modelName] ?? false, file_upload: true, web_search: true, image_generation: true, code_interpreter: true, citations: true } } },
-        actions: [], filters: [],
-      };
+      const modelItem = buildModelItem(modelName, get().modelVision[modelName] ?? false);
 
       const streamPayload: any = {
         model: modelName,
@@ -800,29 +809,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
           try {
             const allMsgs = get().userMessages;
             const allResp = get().modelResponses;
-            const historyMessages: Record<string, any> = {};
-            const messagesArray: any[] = [];
-            let prevMsgId: string | null = null;
+            const { historyMessages, messagesArray, lastMsgId } = buildHistoryPayload(
+              allMsgs, allResp, activeModels, regenStableIds, timestamp,
+            );
 
-            for (const um of allMsgs) {
-              const umObj: any = { id: um.id, parentId: prevMsgId, childrenIds: [], role: 'user', content: typeof um.content === 'string' ? um.content : JSON.stringify(um.content), timestamp, models: activeModels };
-              const responseIds: string[] = [];
-              for (const mn of activeModels) {
-                if (allResp[mn]?.[um.id]) {
-                  const aId = regenStableIds.get(`${mn}::${um.id}`) ?? generateUUID();
-                  responseIds.push(aId);
-                  const aObj: any = { parentId: um.id, id: aId, childrenIds: [], role: 'assistant', content: allResp[mn][um.id], model: mn, modelName: mn, modelIdx: activeModels.indexOf(mn), timestamp };
-                  historyMessages[aId] = aObj;
-                  messagesArray.push(aObj);
-                  prevMsgId = aId;
-                }
-              }
-              umObj.childrenIds = responseIds;
-              historyMessages[um.id] = umObj;
-              messagesArray.splice(messagesArray.length - responseIds.length, 0, umObj);
-            }
-
-            const lastMsgId = messagesArray.length > 0 ? messagesArray[messagesArray.length - 1].id : null;
             await chatService.updateChat(currentChatId, {
               chat: { models: activeModels, history: { messages: historyMessages, currentId: lastMsgId }, messages: messagesArray, params: {}, files: [] },
             });
