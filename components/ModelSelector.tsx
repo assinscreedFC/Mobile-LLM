@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, TextInput, FlatList, TouchableWithoutFeedback, ActivityIndicator } from 'react-native';
 import { Search, X } from 'lucide-react-native';
 import { chatService } from '../services/chatService';
+import { TranslationKey } from '../i18n';
 
 interface ModelInfo {
   id: string;
@@ -21,9 +22,10 @@ interface ModelSelectorProps {
   onClose: () => void;
   onSelect: (modelName: string, vision?: boolean) => void;
   mode?: 'add' | 'switch';
+  t?: (key: TranslationKey) => string;
 }
 
-export default function ModelSelector({ visible, onClose, onSelect, mode = 'add' }: ModelSelectorProps) {
+export default function ModelSelector({ visible, onClose, onSelect, mode = 'add', t = (k) => k }: ModelSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -72,7 +74,7 @@ export default function ModelSelector({ visible, onClose, onSelect, mode = 'add'
             {/* Titre */}
             <View className="px-4 pt-4 pb-2">
               <Text className="text-[15px] font-bold text-gray-800">
-                {mode === 'switch' ? 'Changer le modèle' : 'Ajouter un modèle'}
+                {mode === 'switch' ? t('switchModel') : t('addModel')}
               </Text>
             </View>
 
@@ -81,7 +83,7 @@ export default function ModelSelector({ visible, onClose, onSelect, mode = 'add'
               <View className="flex-row items-center bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                 <Search color="#999" size={18} />
                 <TextInput
-                  placeholder="Rechercher un modèle..."
+                  placeholder={t('searchModel')}
                   className="flex-1 ml-2 text-[15px]"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -99,7 +101,7 @@ export default function ModelSelector({ visible, onClose, onSelect, mode = 'add'
             {loading ? (
               <View className="py-8 items-center">
                 <ActivityIndicator size="small" color="#007AFF" />
-                <Text className="text-[13px] text-gray-400 mt-2">Chargement des modèles...</Text>
+                <Text className="text-[13px] text-gray-400 mt-2">{t('loadingModels')}</Text>
               </View>
             ) : (
               <FlatList
@@ -108,7 +110,7 @@ export default function ModelSelector({ visible, onClose, onSelect, mode = 'add'
                 className="max-h-72"
                 ListEmptyComponent={
                   <View className="py-8 items-center">
-                    <Text className="text-[13px] text-gray-400">Aucun modèle trouvé</Text>
+                    <Text className="text-[13px] text-gray-400">{t('noModelFound')}</Text>
                   </View>
                 }
                 renderItem={({ item }) => (

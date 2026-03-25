@@ -42,17 +42,17 @@ export default function AccountScreen() {
     const user = adeUser.trim();
     const pass = adePass.trim();
     if (!user || !pass) {
-      Alert.alert('Erreur', 'Remplis ton identifiant et mot de passe CAS.');
+      Alert.alert(t('error'), t('adeFillCredentials'));
       return;
     }
     setAdeLoading(true);
     try {
       await adeService.login(user, pass);
       setAdeConnected(true);
-      Alert.alert('ADE Consult', 'Connecte a ADE !');
+      Alert.alert(t('adeConsult'), t('adeConnected'));
     } catch (e: any) {
       const msg = e?.response?.data?.detail || e?.message || 'Erreur inconnue';
-      Alert.alert('Erreur ADE', msg);
+      Alert.alert(t('adeError'), msg);
     } finally {
       setAdeLoading(false);
     }
@@ -126,20 +126,20 @@ export default function AccountScreen() {
               <View style={{ marginTop: 20, paddingHorizontal: 5 }}>
                 <View className="items-center mb-2.5">
                   <Text className="font-bold text-center" style={{ color: colors.text, fontSize: scaledFontSize }}>
-                    — ADE Consult —
+                    — {t('adeConsult')} —
                   </Text>
                 </View>
                 {adeConnected ? (
                   <Text style={{ color: '#4CAF50', fontSize: 16, textAlign: 'center', marginBottom: 10 }}>
-                    Connecte a ADE Consult
+                    {t('adeConnected')}
                   </Text>
                 ) : (
                   <View>
                     <Text style={{ color: colors.subtext, fontSize: 13, marginBottom: 8 }}>
-                      Entre tes identifiants CAS Paris Cite pour acceder a ton emploi du temps.
+                      {t('adeCasDescription')}
                     </Text>
                     <TextInput
-                      placeholder="Identifiant CAS (ex: prenom.nom)"
+                      placeholder={t('adeCasPlaceholder')}
                       placeholderTextColor={colors.subtext}
                       value={adeUser}
                       onChangeText={setAdeUser}
@@ -156,7 +156,7 @@ export default function AccountScreen() {
                       }}
                     />
                     <TextInput
-                      placeholder="Mot de passe CAS"
+                      placeholder={t('adeCasPassword')}
                       placeholderTextColor={colors.subtext}
                       value={adePass}
                       onChangeText={setAdePass}
@@ -187,7 +187,7 @@ export default function AccountScreen() {
                         <ActivityIndicator color="#fff" />
                       ) : (
                         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
-                          Se connecter a ADE
+                          {t('adeConnect')}
                         </Text>
                       )}
                     </Pressable>

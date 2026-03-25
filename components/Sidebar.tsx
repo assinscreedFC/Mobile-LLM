@@ -89,7 +89,7 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
             className="flex-row items-center bg-[#111] py-[14px] px-5 rounded-2xl"
           >
             <Edit3 size={17} color="#FFF" />
-            <Text className="ml-3 text-[15.5px] font-semibold text-white tracking-wide">New Chat</Text>
+            <Text className="ml-3 text-[15.5px] font-semibold text-white tracking-wide">{t('newChatSidebar')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -126,7 +126,7 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
             <View className="w-[34px] h-[34px] rounded-[10px] bg-[#EFEFEF] items-center justify-center">
               <FileText size={17} color="#777" />
             </View>
-            <Text className="ml-[14px] text-[15.5px] text-[#444] font-medium">Notes</Text>
+            <Text className="ml-[14px] text-[15.5px] text-[#444] font-medium">{t('notes')}</Text>
           </TouchableOpacity>
 
           <View className="h-[1px] bg-[#EBEBEB] my-1.5" />
@@ -134,10 +134,10 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
           {/* SECTION : FOLDERS */}
           <View className="mt-2.5">
             <View className="flex-row justify-between items-center mb-2.5 px-1">
-              <Text className="text-[#AAAAAA] font-bold text-[11px] tracking-[1.8px] uppercase">Folders</Text>
+              <Text className="text-[#AAAAAA] font-bold text-[11px] tracking-[1.8px] uppercase">{t('folders')}</Text>
               <TouchableOpacity activeOpacity={0.6} className="flex-row items-center bg-[#F0F0F0] px-2.5 py-[5px] rounded-lg">
                 <FolderPlus size={12} color="#999" />
-                <Text className="ml-[5px] text-[11px] text-[#999] font-semibold">Add</Text>
+                <Text className="ml-[5px] text-[11px] text-[#999] font-semibold">{t('addFolder')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -168,7 +168,7 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
           {/* SECTION : RECENT CHATS DYNAMIQUE */}
           <View>
             <View className="flex-row justify-between items-center mb-2.5 px-1">
-              <Text className="text-[#AAAAAA] font-bold text-[11px] tracking-[1.8px] uppercase">Recent Chats</Text>
+              <Text className="text-[#AAAAAA] font-bold text-[11px] tracking-[1.8px] uppercase">{t('recentChats')}</Text>
               {loading && <ActivityIndicator size="small" color="#AAA" />}
             </View>
 

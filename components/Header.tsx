@@ -79,6 +79,7 @@ export default function Header({
           useChatStore.getState().setModelVision(name, vision ?? false);
         }}
         mode="add"
+        t={t}
       />
 
       <ModelSelector
@@ -86,6 +87,7 @@ export default function Header({
         onClose={() => setIsSwitchSelectorVisible(false)}
         onSelect={handleSwitchModel}
         mode="switch"
+        t={t}
       />
 
       <Modal visible={isMoreMenuVisible} transparent animationType="fade">
@@ -159,7 +161,7 @@ export default function Header({
               className="flex-row items-center"
             >
               <Text className="text-[18px] font-bold" style={{ color: colors.text, flexShrink: 1 }} numberOfLines={1}>
-                {activeModels[currentIndex] || "Modèle"}
+                {activeModels[currentIndex] || t('model')}
               </Text>
               <ChevronDown color={colors.subtext} size={18} style={{ marginLeft: 4, flexShrink: 0 }} />
             </TouchableOpacity>
