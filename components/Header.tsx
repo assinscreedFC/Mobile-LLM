@@ -48,7 +48,7 @@ export default function Header({
     startNewChat();
   };
 
-  const { themeMode } = useSettingsStore();
+  const themeMode = useSettingsStore(state => state.themeMode);
   const { colors, resolved } = useResolvedTheme(themeMode);
 
   const isDark = resolved === 'dark';

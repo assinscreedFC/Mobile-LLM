@@ -46,7 +46,7 @@ export default function InputBar({ t = (k) => k }: InputBarProps) {
   const attachments = useChatStore((state) => state.attachments);
   const addAttachment = useChatStore((state) => state.addAttachment);
   const removeAttachment = useChatStore((state) => state.removeAttachment);
-  const { themeMode } = useSettingsStore();
+  const themeMode = useSettingsStore(state => state.themeMode);
   const { colors, resolved } = useResolvedTheme(themeMode);
   const isDark = resolved === 'dark';
   const { showActionSheetWithOptions } = useActionSheet();

@@ -168,8 +168,8 @@ const createMdStyles = (colors: any, isDark: boolean) => StyleSheet.create({
 //                                                              
 // Main Component
 //                                                              
-export default function MessageBubble({ content, isUser }: MessageBubbleProps) {
-  const { themeMode } = useSettingsStore();
+function MessageBubble({ content, isUser }: MessageBubbleProps) {
+  const themeMode = useSettingsStore(state => state.themeMode);
   const { colors, resolved } = useResolvedTheme(themeMode);
   const isDark = resolved === 'dark';
   const mdStyles = useMemo(() => createMdStyles(colors, isDark), [colors, isDark]);
@@ -212,6 +212,8 @@ export default function MessageBubble({ content, isUser }: MessageBubbleProps) {
   );
 }
 
+
+export default React.memo(MessageBubble);
 
 const s = StyleSheet.create({
   userText: { color: '#FFF', fontSize: 16, lineHeight: 22 },
