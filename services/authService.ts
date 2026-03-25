@@ -28,16 +28,13 @@ export const login = async (email: string, password: string) => {
     } else {
       throw new Error("Le serveur n'a pas renvoyé de clé d'authentification.");
     }
-  } catch (error) {
+  } catch (error: any) {
     if (error.response) {
-      console.log("STATUT DE L'ERREUR :", error.response.status);
-      console.log("RÉPONSE DU SERVEUR :", error.response.data);
-    }
-    else if (error.request) {
-      console.log("AUCUNE RÉPONSE DU SERVEUR. Problème réseau ou URL incorrecte.");
-    }
-    else {
-      console.log("ERREUR INTERNE :", error.message);
+      console.error('[Auth Service] Échec connexion, status:', error.response.status);
+    } else if (error.request) {
+      console.error('[Auth Service] Aucune réponse du serveur.');
+    } else {
+      console.error('[Auth Service] Erreur:', error.message);
     }
 
     throw error;

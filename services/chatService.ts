@@ -125,6 +125,14 @@ export const chatService = {
 
   attachWebpage: async (url: string, collectionName: string = '') => {
     try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error('Seuls les protocoles HTTP/HTTPS sont autorisés');
+      }
+      if (/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(parsed.hostname)) {
+        throw new Error('Les URLs vers des réseaux privés ne sont pas autorisées');
+      }
+
       const response = await apiClient.post('/retrieval/process/web', {
         url,
         collection_name: collectionName,
@@ -169,7 +177,7 @@ export const chatService = {
     });
 
     eventSource.addEventListener('error', (event) => {
-      console.error('SSE Error:', event);
+      console.error('[SSE] Erreur de connexion');
       onError(event);
       eventSource.close();
     });

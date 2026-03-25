@@ -59,13 +59,17 @@ function parseADEParams(raw: string): Record<string, string> {
   return params;
 }
 
+const ADE_ALLOWED_ACTIONS = new Set(['browse', 'expand', 'select', 'search', 'read', 'status']);
+
 async function executeADECall(action: string, params: Record<string, string>): Promise<string> {
+  if (!ADE_ALLOWED_ACTIONS.has(action)) {
+    return `[ADE] Action non autorisée: ${action}`;
+  }
   try {
     if (action === 'status') {
       const s = await adeService.getStatus();
       return `[ADE] Connecté: ${s.authenticated}, Credentials: ${s.has_credentials}, Projet: ${s.project_id ?? 'aucun'}, Ressources: ${s.resources_count}`;
     }
-    // Toutes les autres actions passent par adeService.adeAction
     const result = await adeService.adeAction(action, params);
     return `[ADE] ${JSON.stringify(result)}`;
   } catch (error: any) {
@@ -435,6 +439,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ];
 
         while (adeIteration < ADE_MAX_ITERATIONS && fullContent) {
+          if (get()._stopRequested) break;
           const adeRegex = /<<ADE:(\w+)\(([^)]*)\)>>/g;
           if (!adeRegex.test(fullContent)) break;
 
