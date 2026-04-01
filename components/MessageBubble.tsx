@@ -4,7 +4,7 @@
  * @github https://github.com/assinscreedFC
  */
 import React, { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, Image, StyleSheet, Platform } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { WebView } from 'react-native-webview';
 import { useSettingsStore } from '../store/useSettingsStore';
@@ -16,6 +16,8 @@ import { useResolvedTheme } from '../utils/theme';
 interface MessageBubbleProps {
   content: string;
   isUser: boolean;
+  images?: string[];
+  bubbleWidth?: number;
 }
 
 //                                                              
@@ -168,7 +170,22 @@ const createMdStyles = (colors: any, isDark: boolean) => StyleSheet.create({
 //                                                              
 // Main Component
 //                                                              
-function MessageBubble({ content, isUser }: MessageBubbleProps) {
+function ImageGrid({ urls, single }: { urls: string[]; single?: boolean }) {
+  if (single || urls.length === 1) {
+    return (
+      <Image source={{ uri: urls[0] }} style={s.singleImage} resizeMode="cover" />
+    );
+  }
+  return (
+    <View style={s.imageGrid}>
+      {urls.map((url, i) => (
+        <Image key={i} source={{ uri: url }} style={s.multiImage} resizeMode="cover" />
+      ))}
+    </View>
+  );
+}
+
+function MessageBubble({ content, isUser, images }: MessageBubbleProps) {
   const themeMode = useSettingsStore(state => state.themeMode);
   const { colors, resolved } = useResolvedTheme(themeMode);
   const isDark = resolved === 'dark';
@@ -177,10 +194,16 @@ function MessageBubble({ content, isUser }: MessageBubbleProps) {
   // Hooks must be called unconditionally before any early return
   const blocks = useMemo(() => parseContent(content || ''), [content]);
   const hasMath = blocks.some(b => b.type !== 'text');
+  const hasImages = images && images.length > 0;
 
-  // User messages: simple text
+  // User messages: images + text
   if (isUser) {
-    return <Text style={s.userText}>{content}</Text>;
+    return (
+      <View>
+        {hasImages && <ImageGrid urls={images} />}
+        {content ? <Text style={s.userText}>{content}</Text> : null}
+      </View>
+    );
   }
 
   if (!hasMath) {
@@ -218,6 +241,9 @@ export default React.memo(MessageBubble);
 const s = StyleSheet.create({
   userText: { color: '#FFF', fontSize: 16, lineHeight: 22 },
   aiContainer: { flex: 1 },
+  singleImage: { width: 220, height: 280, borderRadius: 14, marginBottom: 8 },
+  imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 8 },
+  multiImage: { width: 120, height: 120, borderRadius: 10 },
   mathBlockWrap: { width: '100%', minHeight: 30, marginVertical: 6, borderRadius: 8, overflow: 'hidden' },
   mathInlineWrap: { minHeight: 20, marginVertical: 2, overflow: 'hidden' },
 });

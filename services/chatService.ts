@@ -198,13 +198,69 @@ export const chatService = {
     const token = await SecureStore.getItemAsync('token');
     const url = `${BASE_URL_CHAT}/chat/completions`;
 
+    const body = JSON.stringify({ ...payload, stream: true });
+
+    // Use fetch for payloads with files — react-native-sse EventSource
+    // doesn't reliably transmit file references in POST bodies
+    const hasFiles = payload.files?.length > 0
+      || payload.messages?.some((m: any) => m.files?.length > 0);
+    console.log('[SSE] hasFiles:', hasFiles, 'payload.files:', payload.files?.length, 'msg.files:', payload.messages?.filter((m: any) => m.files?.length > 0).length);
+    if (hasFiles) {
+      // Mimic EventSource interface so streamingSlice can override .close()
+      const fetchES: any = {
+        _closed: false,
+        _ready: null as Promise<void> | null,
+        close() { this._closed = true; },
+        addEventListener() {},
+        removeEventListener() {},
+      };
+      fetchES._ready = (async () => {
+        try {
+          // Log the exact payload being sent
+          const parsed = JSON.parse(body);
+          console.log('[FETCH BODY] model:', parsed.model,
+            'files:', JSON.stringify(parsed.files?.map((f: any) => ({type:f.type,id:f.id}))),
+            'msg_files:', parsed.messages?.filter((m: any) => m.files).length,
+            'vision:', parsed.model_item?.info?.meta?.capabilities?.vision,
+            'body_size:', body.length);
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body,
+          });
+          console.log('[FETCH RESP] status:', response.status, 'ct:', response.headers.get('content-type'));
+          const responseText = await response.text();
+          console.log('[FETCH RESP] length:', responseText.length, 'first200:', responseText.substring(0, 200));
+          for (const line of responseText.split('\n')) {
+            if (fetchES._closed) break;
+            if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+              try {
+                const json = JSON.parse(line.substring(6));
+                const content = json.choices?.[0]?.delta?.content || '';
+                onChunk(content, json.task_id);
+              } catch {}
+            }
+          }
+          // Call .close() which by now has been overridden by streamingSlice
+          // with persistence logic (ADE loop, updateChat, chatCompleted)
+          if (!fetchES._closed) {
+            fetchES.close();
+          }
+        } catch (err) {
+          onError(err);
+        }
+      })();
+      return fetchES;
+    }
+
     const eventSource = new EventSource(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ ...payload, stream: true }),
+      body,
     });
 
     eventSource.addEventListener('message', (event) => {
@@ -304,3 +360,4 @@ export const chatService = {
     return response.data;
   },
 };
+

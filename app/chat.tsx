@@ -16,7 +16,8 @@ import InputBar from '../components/InputBar';
 import ChatControlsPanel from '../components/ChatControlsPanel';
 import { useI18n } from '../i18n';
 import { useChatStore, Message } from '../store/chatStore';
-import { buildConversation, getDisplayText } from '../utils/messageHelpers';
+import { useShallow } from 'zustand/react/shallow';
+import { buildConversation, getDisplayText, getImageUrls } from '../utils/messageHelpers';
 import MessageBubble from '../components/MessageBubble';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useResolvedTheme } from '../utils/theme';
@@ -59,11 +60,17 @@ export default function ChatScreen() {
   const [isChatControlsVisible, setIsChatControlsVisible] = useState(false);
 
   const systemPrompt = useChatStore((state) => state.systemPrompt);
-  const temperature = useChatStore((state) => state.temperature);
-  const maxTokens = useChatStore((state) => state.maxTokens);
   const setSystemPrompt = useChatStore((state) => state.setSystemPrompt);
-  const setTemperature = useChatStore((state) => state.setTemperature);
-  const setMaxTokens = useChatStore((state) => state.setMaxTokens);
+  const setParam = useChatStore((state) => state.setParam);
+  const llmParams = useChatStore(useShallow((state) => ({
+    temperature: state.temperature, maxTokens: state.maxTokens, topK: state.topK, topP: state.topP,
+    minP: state.minP, frequencyPenalty: state.frequencyPenalty, presencePenalty: state.presencePenalty,
+    repeatPenalty: state.repeatPenalty, repeatLastN: state.repeatLastN,
+    mirostat: state.mirostat, mirostatEta: state.mirostatEta, mirostatTau: state.mirostatTau,
+    tfsZ: state.tfsZ, seed: state.seed, stop: state.stop,
+    numCtx: state.numCtx, numBatch: state.numBatch, numKeep: state.numKeep,
+    think: state.think, streamResponse: state.streamResponse,
+  })));
 
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
@@ -163,6 +170,17 @@ export default function ChatScreen() {
 
           const reversedConversation = [...conversation].reverse();
 
+          if (conversation.length === 0) {
+            return (
+              <View style={{ width, flex: 1 }}>
+                <View style={cs.emptyState}>
+                  <MessageCircle size={48} color={colors.subtext} />
+                  <Text style={[cs.emptyText, { color: colors.subtext }]}>{t('askQuestion')}</Text>
+                </View>
+              </View>
+            );
+          }
+
           return (
             <View style={{ width, flex: 1 }}>
               <FlatList
@@ -176,24 +194,23 @@ export default function ChatScreen() {
                 maxToRenderPerBatch={5}
                 windowSize={7}
 
-
-                ListEmptyComponent={() => (
-                  <View style={[cs.emptyState, { transform: [{ scaleY: -1 }] }]}>
-                    <MessageCircle size={48} color={colors.subtext} />
-                    <Text style={[cs.emptyText, { color: colors.subtext }]}>{t('askQuestion')}</Text>
-                  </View>
-                )}
-
                 renderItem={({ item: msg }) => {
                   const isUser = msg.role === 'user';
                   const isEditing = editingMsgId === msg.id;
                   const isCopied = copiedMsgId === msg.id;
                   const displayText = getDisplayText(msg.content);
+                  const images = getImageUrls(msg.content);
 
                   return (
                     <View style={{ marginTop: 24 }}>
+                      {/* Images rendered outside the bubble for cleaner look */}
+                      {isUser && images.length > 0 && !isEditing && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: displayText ? 6 : 0 }}>
+                          <MessageBubble content="" isUser={true} images={images} />
+                        </View>
+                      )}
                       <View style={{ flexDirection: 'row', justifyContent: isUser ? 'flex-end' : 'flex-start' }}>
-                        <View style={isUser ? cs.userBubble : cs.aiBubble}>
+                        <View style={isUser ? (displayText ? cs.userBubble : cs.userBubbleNoText) : cs.aiBubble}>
                           {isEditing ? (
                             <View>
                               <TextInput autoFocus multiline value={editText} onChangeText={setEditText} style={cs.editInput} />
@@ -203,7 +220,7 @@ export default function ChatScreen() {
                               </View>
                             </View>
                           ) : (
-                            <MessageBubble content={displayText} isUser={isUser} />
+                            <MessageBubble content={displayText} isUser={isUser} images={isUser ? [] : images} />
                           )}
                         </View>
                       </View>
@@ -240,10 +257,8 @@ export default function ChatScreen() {
         onClose={() => setIsChatControlsVisible(false)}
         systemPrompt={systemPrompt}
         onSystemPromptChange={setSystemPrompt}
-        temperature={temperature}
-        onTemperatureChange={setTemperature}
-        maxTokens={maxTokens}
-        onMaxTokensChange={setMaxTokens}
+        params={llmParams}
+        onParamChange={setParam}
         t={t}
       />
     </KeyboardAvoidingView>
@@ -255,6 +270,7 @@ const cs = StyleSheet.create({
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80, opacity: 0.3 },
   emptyText: { fontSize: 18, marginTop: 16 },
   userBubble: { backgroundColor: '#007AFF', padding: 16, borderRadius: 24, maxWidth: '85%' },
+  userBubbleNoText: { maxWidth: '85%' },
   aiBubble: { maxWidth: '100%', paddingRight: 4 },
   editInput: { fontSize: 16, color: '#fff', minHeight: 40 },
   editActions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8, gap: 8 },

@@ -1,6 +1,7 @@
 import {
   buildConversation,
   getDisplayText,
+  getImageUrls,
   buildModelItem,
   buildHistoryPayload,
   type Message,
@@ -33,6 +34,37 @@ describe('messageHelpers', () => {
     it('converts other types to string', () => {
       expect(getDisplayText(42 as any)).toBe('42');
       expect(getDisplayText(null as any)).toBe('null');
+    });
+  });
+
+  describe('getImageUrls', () => {
+    it('returns empty array for string content', () => {
+      expect(getImageUrls('Hello world')).toEqual([]);
+    });
+
+    it('extracts image URLs from content array', () => {
+      const content = [
+        { type: 'image_url', image_url: { url: 'https://example.com/img.jpg' } },
+        { type: 'text', text: 'describe this' },
+        { type: 'image_url', image_url: { url: '/files/abc123' } },
+      ];
+      expect(getImageUrls(content)).toEqual([
+        'https://example.com/img.jpg',
+        '/files/abc123',
+      ]);
+    });
+
+    it('returns empty array when no image_url parts', () => {
+      const content = [{ type: 'text', text: 'hello' }];
+      expect(getImageUrls(content)).toEqual([]);
+    });
+
+    it('filters out entries with missing url', () => {
+      const content = [
+        { type: 'image_url', image_url: {} },
+        { type: 'image_url', image_url: { url: 'valid.jpg' } },
+      ];
+      expect(getImageUrls(content)).toEqual(['valid.jpg']);
     });
   });
 
@@ -182,7 +214,7 @@ describe('messageHelpers', () => {
       expect(result.messagesArray).toHaveLength(4);
     });
 
-    it('stringifies non-string content', () => {
+    it('preserves non-string content as-is', () => {
       const userMessages: Message[] = [
         { id: 'u1', role: 'user', content: [{ type: 'text', text: 'hello' }] },
       ];
@@ -195,7 +227,7 @@ describe('messageHelpers', () => {
         1000,
       );
 
-      expect(result.historyMessages['u1'].content).toBe(JSON.stringify([{ type: 'text', text: 'hello' }]));
+      expect(result.historyMessages['u1'].content).toEqual([{ type: 'text', text: 'hello' }]);
     });
 
     it('generates UUID when stableIds has no mapping', () => {

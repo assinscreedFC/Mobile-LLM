@@ -6,13 +6,34 @@
 
 import { Attachment } from '../../utils/messageHelpers';
 
-export interface SettingsSlice {
-  systemPrompt: string;
+/** All LLM generation parameters (null = not sent / use server default) */
+export interface LLMParams {
   temperature: number;
   maxTokens: number;
+  topK: number;
+  topP: number;
+  minP: number | null;
+  frequencyPenalty: number | null;
+  presencePenalty: number | null;
+  repeatPenalty: number | null;
+  repeatLastN: number | null;
+  mirostat: number | null;       // 0=off, 1=mirostat, 2=mirostat2
+  mirostatEta: number | null;
+  mirostatTau: number | null;
+  tfsZ: number | null;
+  seed: number | null;
+  stop: string | null;           // comma-separated stop sequences
+  numCtx: number | null;
+  numBatch: number | null;
+  numKeep: number | null;
+  think: boolean;                // Ollama think mode
+  streamResponse: boolean;
+}
+
+export interface SettingsSlice extends LLMParams {
+  systemPrompt: string;
   setSystemPrompt: (v: string) => void;
-  setTemperature: (v: number) => void;
-  setMaxTokens: (v: number) => void;
+  setParam: <K extends keyof LLMParams>(key: K, value: LLMParams[K]) => void;
   attachments: Attachment[];
   addAttachment: (att: Attachment) => void;
   removeAttachment: (uri: string) => void;
@@ -25,20 +46,52 @@ export interface SettingsSlice {
   setCodeInterpreterEnabled: (v: boolean) => void;
   addModel: (name: string) => void;
   switchModel: (index: number, newModel: string) => void;
+  // Legacy setters (keep for existing callers)
+  setTemperature: (v: number) => void;
+  setMaxTokens: (v: number) => void;
+  setTopK: (v: number) => void;
+  setTopP: (v: number) => void;
 }
+
+const DEFAULT_PARAMS: LLMParams = {
+  temperature: 0.7,
+  maxTokens: 2048,
+  topK: 40,
+  topP: 0.9,
+  minP: null,
+  frequencyPenalty: null,
+  presencePenalty: null,
+  repeatPenalty: null,
+  repeatLastN: null,
+  mirostat: null,
+  mirostatEta: null,
+  mirostatTau: null,
+  tfsZ: null,
+  seed: null,
+  stop: null,
+  numCtx: null,
+  numBatch: null,
+  numKeep: null,
+  think: false,
+  streamResponse: true,
+};
 
 export const createSettingsSlice = (set: any, get: any): SettingsSlice => ({
   systemPrompt: '',
-  temperature: 0.7,
-  maxTokens: 2048,
+  ...DEFAULT_PARAMS,
   attachments: [],
   modelVision: {},
   webSearchEnabled: false,
   codeInterpreterEnabled: false,
 
   setSystemPrompt: (v) => set({ systemPrompt: v }),
+  setParam: (key, value) => set({ [key]: value }),
+
+  // Legacy setters
   setTemperature: (v) => set({ temperature: v }),
   setMaxTokens: (v) => set({ maxTokens: v }),
+  setTopK: (v) => set({ topK: v }),
+  setTopP: (v) => set({ topP: v }),
 
   addAttachment: (att) => set((state: any) => ({ attachments: [...state.attachments, att] })),
   removeAttachment: (uri) => set((state: any) => ({

@@ -4,10 +4,38 @@
  * @github https://github.com/assinscreedFC
  */
 
+import * as FileSystem from 'expo-file-system';
 import { chatService } from '../../services/chatService';
 import { generateUUID } from '../../utils/uuid';
-import { Message, buildModelItem, buildHistoryPayload } from '../../utils/messageHelpers';
+import { Message, buildModelItem, buildHistoryPayload, getDisplayText } from '../../utils/messageHelpers';
 import { ADE_SYSTEM_PROMPT, ADE_MAX_ITERATIONS, processADECalls } from './adeSlice';
+import type { LLMParams } from './settingsSlice';
+
+/** Build API params object from store, omitting null values */
+function buildApiParams(state: LLMParams): Record<string, any> {
+  const p: Record<string, any> = {
+    temperature: state.temperature,
+    max_tokens: state.maxTokens,
+    top_k: state.topK,
+    top_p: state.topP,
+  };
+  if (state.minP != null) p.min_p = state.minP;
+  if (state.frequencyPenalty != null) p.frequency_penalty = state.frequencyPenalty;
+  if (state.presencePenalty != null) p.presence_penalty = state.presencePenalty;
+  if (state.repeatPenalty != null) p.repeat_penalty = state.repeatPenalty;
+  if (state.repeatLastN != null) p.repeat_last_n = state.repeatLastN;
+  if (state.mirostat != null) p.mirostat = state.mirostat;
+  if (state.mirostatEta != null) p.mirostat_eta = state.mirostatEta;
+  if (state.mirostatTau != null) p.mirostat_tau = state.mirostatTau;
+  if (state.tfsZ != null) p.tfs_z = state.tfsZ;
+  if (state.seed != null) p.seed = state.seed;
+  if (state.stop) p.stop = state.stop.split(',').map((s: string) => s.trim()).filter(Boolean);
+  if (state.numCtx != null) p.num_ctx = state.numCtx;
+  if (state.numBatch != null) p.num_batch = state.numBatch;
+  if (state.numKeep != null) p.num_keep = state.numKeep;
+  if (state.think) p.think = true;
+  return p;
+}
 
 export interface StreamingSlice {
   currentChatId: string | null;
@@ -55,7 +83,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
   },
 
   sendMessage: async (text: string) => {
-    let { isTyping, activeModels, currentChatId, webSearchEnabled, codeInterpreterEnabled, attachments, systemPrompt, temperature, maxTokens } = get();
+    let { isTyping, activeModels, currentChatId, webSearchEnabled, codeInterpreterEnabled, attachments, systemPrompt } = get();
     if (isTyping || (!text.trim() && attachments.length === 0)) return;
 
     set({
@@ -67,30 +95,42 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
     const userMsgId = generateUUID();
     const timestamp = Math.floor(Date.now() / 1000);
 
+    // Upload ALL attachments to server (images + files)
     const uploadedFiles: any[] = [];
     for (const att of attachments) {
       try {
+        console.log('[UPLOAD] Uploading:', att.type, att.name, att.mimeType);
         const result = await chatService.uploadFile(att.uri, att.name, att.mimeType);
+        console.log('[UPLOAD] Result:', JSON.stringify(result));
         if (result) {
-          uploadedFiles.push({ type: att.type === 'image' ? 'image' : 'file', ...result });
+          uploadedFiles.push({
+            type: att.type === 'image' ? 'image' : 'file',
+            localUri: att.uri,
+            ...result,
+          });
         }
       } catch (e) {
         console.error('Upload error:', e);
       }
     }
 
+    const hasImages = uploadedFiles.some((f: any) => f.type === 'image');
+    console.log('[PAYLOAD] uploadedFiles:', uploadedFiles.length, 'hasImages:', hasImages,
+      'files:', uploadedFiles.map((f: any) => ({ type: f.type, id: f.id, name: f.name })));
+
+    // Build display content with local URIs for images
     let messageContent: string | any[];
     if (uploadedFiles.length > 0) {
-      const contentParts: any[] = [];
+      const displayParts: any[] = [];
       for (const file of uploadedFiles) {
         if (file.type === 'image') {
-          contentParts.push({ type: 'image_url', image_url: { url: file.url || file.path } });
+          displayParts.push({ type: 'image_url', image_url: { url: file.localUri } });
         } else {
-          contentParts.push({ type: 'text', text: `[Fichier joint: ${file.name}]` });
+          displayParts.push({ type: 'text', text: `[Fichier joint: ${file.name}]` });
         }
       }
-      contentParts.push({ type: 'text', text });
-      messageContent = contentParts;
+      displayParts.push({ type: 'text', text });
+      messageContent = displayParts;
     } else {
       messageContent = text;
     }
@@ -104,10 +144,9 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
 
     if (!currentChatId) {
       try {
-        const contentStr = typeof messageContent === 'string' ? messageContent : text;
         const data = await chatService.createNewChat(activeModels[0], {
           id: userMsgId,
-          content: contentStr,
+          content: typeof messageContent === 'string' ? messageContent : text,
         });
         currentChatId = data.id;
         set({ currentChatId });
@@ -116,14 +155,17 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
       }
     }
 
-    const baseMessages = get().userMessages.map((m: Message) => ({
+    // Build API messages — plain text content
+    const allUserMsgsNow = get().userMessages;
+    const baseMessages = allUserMsgsNow.map((m: Message) => ({
       role: m.role,
-      content: m.content,
+      content: typeof m.content === 'string' ? m.content : getDisplayText(m.content),
     }));
-    const adePrompt = systemPrompt
-      ? `${systemPrompt}\n\n${ADE_SYSTEM_PROMPT}`
-      : ADE_SYSTEM_PROMPT;
-    const apiMessages = [{ role: 'system', content: adePrompt }, ...baseMessages];
+    // Skip ADE system prompt when images are attached — it confuses vision models
+    const effectiveSystemPrompt = hasImages
+      ? (systemPrompt || 'Tu es un assistant utile.')
+      : (systemPrompt ? `${systemPrompt}\n\n${ADE_SYSTEM_PROMPT}` : ADE_SYSTEM_PROMPT);
+    const apiMessages = [{ role: 'system', content: effectiveSystemPrompt }, ...baseMessages];
 
     // Pre-generate stable assistant IDs for all (model x userMsg) combos
     // so concurrent stream callbacks all reference the same IDs
@@ -142,12 +184,14 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
       let fullContent = '';
       const assistantMsgId = stableAssistantIds.get(`${modelName}::${userMsgId}`)!;
 
-      const modelItem = buildModelItem(modelName, get().modelVision[modelName] ?? false);
+      // Force vision=true when images are attached so the server processes them
+      const visionEnabled = hasImages || (get().modelVision[modelName] ?? false);
+      const modelItem = buildModelItem(modelName, visionEnabled);
 
       const streamPayload: any = {
         model: modelName,
         messages: apiMessages,
-        params: { temperature, max_tokens: maxTokens },
+        params: buildApiParams(get()),
         tool_servers: [],
         features: {
           voice: false,
@@ -167,7 +211,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
             : null,
           childrenIds: [assistantMsgId],
           role: 'user',
-          content: typeof messageContent === 'string' ? messageContent : text,
+          content: text,
           timestamp,
           models: activeModels,
         },
@@ -178,12 +222,10 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
         },
       };
 
+      // ALL files at top-level (images + documents)
       if (uploadedFiles.length > 0) {
         streamPayload.files = uploadedFiles.map((f: any) => ({
-          type: 'file',
-          id: f.id,
-          filename: f.name,
-          meta: f.meta,
+          type: 'file', id: f.id, filename: f.name, meta: f.meta,
         }));
       }
 
@@ -229,7 +271,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
         // --- ADE loop: execute actions, re-stream, repeat if LLM emits more actions ---
         let adeIteration = 0;
         const adeConversation: { role: string; content: string }[] = [
-          { role: 'system', content: adePrompt },
+          { role: 'system', content: effectiveSystemPrompt },
           ...baseMessages,
         ];
 
@@ -265,7 +307,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
             const reformulatePayload = {
               model: modelName,
               messages: adeConversation,
-              params: { temperature: 0.3, max_tokens: maxTokens },
+              params: { temperature: 0.3, max_tokens: get().maxTokens },
               stream: true,
             };
 
@@ -333,7 +375,9 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
                 history: { messages: historyMessages, currentId: lastMsgId },
                 messages: messagesArray,
                 params: {},
-                files: uploadedFiles.length > 0 ? uploadedFiles : [],
+                files: uploadedFiles.length > 0
+                  ? uploadedFiles.map((f: any) => ({ id: f.id, type: f.type, name: f.name, url: f.url, meta: f.meta, mimeType: f.mimeType }))
+                  : [],
               },
             });
 
@@ -343,7 +387,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
                 {
                   id: userMsgId,
                   role: 'user',
-                  content: typeof messageContent === 'string' ? messageContent : text,
+                  content: messageContent,
                   timestamp,
                 },
                 {
@@ -361,7 +405,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
 
             if (get().userMessages.length <= 1) {
               const apiMsgs = [
-                { role: 'user' as const, content: typeof messageContent === 'string' ? messageContent : text },
+                { role: 'user' as const, content: messageContent },
                 { role: 'assistant' as const, content: fullContent },
               ];
               chatService.generateTitle(currentChatId, modelName, apiMsgs)
@@ -448,7 +492,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
   },
 
   regenerateResponse: async (userMsgId: string) => {
-    const { isTyping, activeModels, currentChatId, webSearchEnabled, codeInterpreterEnabled, systemPrompt, temperature, maxTokens } = get();
+    const { isTyping, activeModels, currentChatId, webSearchEnabled, codeInterpreterEnabled, systemPrompt, maxTokens } = get();
     if (isTyping) return;
 
     const newModelResponses = { ...get().modelResponses };
@@ -498,7 +542,7 @@ export const createStreamingSlice = (set: any, get: any): StreamingSlice => ({
       const streamPayload: any = {
         model: modelName,
         messages: apiMessages,
-        params: { temperature, max_tokens: maxTokens },
+        params: buildApiParams(get()),
         tool_servers: [],
         features: { voice: false, image_generation: false, code_interpreter: codeInterpreterEnabled, web_search: webSearchEnabled },
         variables: {},

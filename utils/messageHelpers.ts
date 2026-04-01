@@ -64,7 +64,7 @@ export function buildHistoryPayload(
       parentId: prevMsgId,
       childrenIds: [],
       role: 'user',
-      content: typeof um.content === 'string' ? um.content : JSON.stringify(um.content),
+      content: um.content,
       timestamp,
       models: activeModels,
     };
@@ -118,6 +118,14 @@ export function buildConversation(
     }
   }
   return conversation;
+}
+
+export function getImageUrls(content: string | any[]): string[] {
+  if (!Array.isArray(content)) return [];
+  return content
+    .filter((p: any) => p.type === 'image_url')
+    .map((p: any) => p.image_url?.url)
+    .filter(Boolean);
 }
 
 export function getDisplayText(content: string | any[]): string {
