@@ -4,15 +4,16 @@
  * @github https://github.com/assinscreedFC
  */
 
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Pressable, Modal, Alert } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, TouchableOpacity, Pressable, Modal, Alert, Image } from 'react-native';
 import { Menu, ChevronDown, Plus, User, Edit3, MoreVertical, SlidersHorizontal, Share2, Download, Trash2 } from 'lucide-react-native';
 import ModelSelector from './ModelSelector';
 import Sidebar from './Sidebar';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { TranslationKey } from '../i18n';
 import { useChatStore } from '../store/chatStore';
 import { chatService } from '../services/chatService';
+import { compteService } from '../services/compteService';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useResolvedTheme } from '../utils/theme';
 
@@ -33,6 +34,7 @@ export default function Header({
   const [isSwitchSelectorVisible, setIsSwitchSelectorVisible] = useState(false);
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [isMoreMenuVisible, setIsMoreMenuVisible] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const router = useRouter();
 
   const activeModels = useChatStore((state) => state.activeModels);
@@ -75,6 +77,32 @@ export default function Header({
     switchModel(currentIndex, newModel);
     useChatStore.getState().setModelVision(newModel, vision ?? false);
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const loadAvatar = async () => {
+        try {
+          const profile = await compteService.getProfile();
+
+          if (isActive) {
+            setAvatarUrl(profile.avatarUrl);
+          }
+        } catch {
+          if (isActive) {
+            setAvatarUrl(null);
+          }
+        }
+      };
+
+      loadAvatar();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   return (
     <View style={{ backgroundColor: colors.bg, borderBottomColor: colors.border, borderBottomWidth: 1 }} className="mt-2 pt-12 pb-2">
@@ -203,7 +231,15 @@ export default function Header({
             className="w-9 h-9 rounded-[18px] items-center justify-center overflow-hidden"
             style={{ backgroundColor: isDark ? '#333' : '#E5E5E5' }}
           >
-            <User color={colors.subtext} size={20} />
+            {avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            ) : (
+              <User color={colors.subtext} size={20} />
+            )}
           </Pressable>
         </View>
       </View>

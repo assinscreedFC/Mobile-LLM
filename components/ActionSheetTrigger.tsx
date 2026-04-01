@@ -1,7 +1,7 @@
 import { Text, Pressable, } from 'react-native';
 import { useActionSheet } from '@expo/react-native-action-sheet';
-import { useHaptics } from '../utils/useHaptics';
-import {useUIScale} from '../utils/useUIScale';
+import { useHaptics } from '../hooks/useHaptics';
+import {useUIScale} from '../hooks/useUIScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const ActionSheetTrigger = ({ value, validValues, setter, id, style, textColor, backgroundColor, ...rest}) =>{

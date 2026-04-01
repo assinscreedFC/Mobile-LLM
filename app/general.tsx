@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -7,13 +7,22 @@ import {
   StyleSheet,
   Modal,
   Pressable,
+  Alert,
 } from "react-native";
+import * as Localization from "expo-localization";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react-native";
 import { useRouter } from "expo-router";
 
-import { useSettingsStore } from "../store/useSettingsStore";
+import { resources, type TranslationKey } from "../i18n/translations";
+import { useSettingsStore, type Language } from "../store/useSettingsStore";
 import { useResolvedTheme } from "../utils/theme";
-import { useI18n } from "../i18n/useI18n";
+
+function resolvePreviewLanguage(language: Language) {
+  if (language !== "systeme") return language;
+
+  const deviceLanguage = Localization.getLocales()[0]?.languageCode;
+  return deviceLanguage === "fr" || deviceLanguage === "zh" ? deviceLanguage : "en";
+}
 
 export default function General() {
   const router = useRouter();
@@ -26,11 +35,37 @@ export default function General() {
     setNotificationsEnabled,
   } = useSettingsStore();
 
-  const { colors } = useResolvedTheme(themeMode);
-  const { t } = useI18n();
-
+  const [draftThemeMode, setDraftThemeMode] = useState(themeMode);
+  const [draftLanguage, setDraftLanguage] = useState(language);
+  const [draftNotificationsEnabled, setDraftNotificationsEnabled] =
+    useState(notificationsEnabled);
+  const [isDirty, setIsDirty] = useState(false);
   const [themeVisible, setThemeVisible] = useState(false);
   const [langVisible, setLangVisible] = useState(false);
+
+  useEffect(() => {
+    if (isDirty) return;
+
+    setDraftThemeMode(themeMode);
+    setDraftLanguage(language);
+    setDraftNotificationsEnabled(notificationsEnabled);
+  }, [themeMode, language, notificationsEnabled, isDirty]);
+
+  const previewLanguage = useMemo(
+    () => resolvePreviewLanguage(draftLanguage),
+    [draftLanguage]
+  );
+
+  const previewTranslations = useMemo(
+    () => resources[previewLanguage].translation as Record<string, string>,
+    [previewLanguage]
+  );
+
+  const t = (key: TranslationKey) => {
+    return previewTranslations[key] ?? resources.en.translation[key] ?? key;
+  };
+
+  const { colors } = useResolvedTheme(draftThemeMode);
 
   const themes = useMemo(
     () =>
@@ -45,6 +80,7 @@ export default function General() {
   const langues = useMemo(
     () =>
       [
+        { key: "systeme", label: t("followSystem") },
         { key: "zh", label: t("chinese") },
         { key: "en", label: t("english") },
         { key: "fr", label: t("french") },
@@ -53,65 +89,102 @@ export default function General() {
   );
 
   const themeLabel =
-    themeMode === "systeme"
+    draftThemeMode === "systeme"
       ? t("followSystem")
-      : themeMode === "clair"
+      : draftThemeMode === "clair"
       ? t("light")
       : t("dark");
 
   const langLabel =
-    language === "fr" ? t("french") : language === "en" ? t("english") : t("chinese");
+    draftLanguage === "systeme"
+      ? t("followSystem")
+      : draftLanguage === "fr"
+      ? t("french")
+      : draftLanguage === "en"
+      ? t("english")
+      : t("chinese");
+
+  const handleSave = () => {
+    setThemeMode(draftThemeMode);
+    setLanguage(draftLanguage);
+    setNotificationsEnabled(draftNotificationsEnabled);
+    setIsDirty(false);
+    Alert.alert(t("generalSave"), t("generalSaveMessage"));
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={[
-            styles.backButton,
-            { backgroundColor: colors.card, borderColor: colors.border },
-          ]}
-        >
-          <ChevronLeft size={22} color={colors.text} strokeWidth={2.5} />
-        </Pressable>
-      </View>
-
-      <Text style={[styles.title, { color: colors.text }]}>— {t("general")} —</Text>
-
-      <TouchableOpacity
-        style={[styles.item, { backgroundColor: colors.card }]}
-        onPress={() => setThemeVisible(true)}
-      >
-        <Text style={[styles.label, { color: colors.text }]}>{t("theme")}</Text>
-        <View style={styles.right}>
-          <Text style={[styles.value, { color: colors.subtext }]}>{themeLabel}</Text>
-          <ChevronRight size={18} color={colors.subtext} />
+    <View style={[styles.screen, { backgroundColor: colors.bg }]}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable
+            onPress={() => router.back()}
+            style={[
+              styles.backButton,
+              { backgroundColor: colors.card, borderColor: colors.border },
+            ]}
+          >
+            <ChevronLeft size={22} color={colors.text} strokeWidth={2.5} />
+          </Pressable>
         </View>
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.item, { backgroundColor: colors.card }]}
-        onPress={() => setLangVisible(true)}
-      >
-        <Text style={[styles.label, { color: colors.text }]}>{t("language")}</Text>
-        <View style={styles.right}>
-          <Text style={[styles.value, { color: colors.subtext }]}>{langLabel}</Text>
-          <ChevronRight size={18} color={colors.subtext} />
+        <Text style={[styles.title, { color: colors.text }]}>— {t("general")} —</Text>
+
+        <View style={styles.content}>
+          <View>
+            <TouchableOpacity
+              style={[styles.item, { backgroundColor: colors.card }]}
+              onPress={() => setThemeVisible(true)}
+            >
+              <Text style={[styles.label, { color: colors.text }]}>{t("theme")}</Text>
+              <View style={styles.right}>
+                <Text style={[styles.value, { color: colors.subtext }]}>{themeLabel}</Text>
+                <ChevronRight size={18} color={colors.subtext} />
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.item, { backgroundColor: colors.card }]}
+              onPress={() => setLangVisible(true)}
+            >
+              <Text style={[styles.label, { color: colors.text }]}>{t("language")}</Text>
+              <View style={styles.right}>
+                <Text style={[styles.value, { color: colors.subtext }]}>{langLabel}</Text>
+                <ChevronRight size={18} color={colors.subtext} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={[styles.item, { backgroundColor: colors.card }]}>
+              <Text style={[styles.label, { color: colors.text }]}>{t("notifications")}</Text>
+              <Switch
+                value={draftNotificationsEnabled}
+                onValueChange={(value) => {
+                  setDraftNotificationsEnabled(value);
+                  setIsDirty(true);
+                }}
+                trackColor={{
+                  false: colors.subtext,
+                  true: colors.subaccent,
+                }}
+                thumbColor={draftNotificationsEnabled ? colors.accent : colors.text}
+                ios_backgroundColor={colors.subtext}
+              />
+            </View>
+          </View>
+
+          <View style={styles.footer}>
+            <Pressable
+              style={[
+                styles.saveButton,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+              onPress={handleSave}
+            >
+              <Text style={[styles.saveButtonText, { color: colors.text }]}>
+                {t("generalSave")}
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </TouchableOpacity>
-
-      <View style={[styles.item, { backgroundColor: colors.card }]}>
-        <Text style={[styles.label, { color: colors.text }]}>{t("notifications")}</Text>
-        <Switch
-          value={notificationsEnabled}
-          onValueChange={setNotificationsEnabled}
-          trackColor={{
-            false: colors.subtext,
-            true: colors.subaccent,
-          }}
-          thumbColor={notificationsEnabled ? colors.accent : colors.text}
-          ios_backgroundColor={colors.subtext}
-        />
       </View>
 
       <Modal visible={themeVisible} transparent animationType="fade">
@@ -122,12 +195,13 @@ export default function General() {
                 key={item.key}
                 style={styles.option}
                 onPress={() => {
-                  setThemeMode(item.key);
+                  setDraftThemeMode(item.key);
+                  setIsDirty(true);
                   setThemeVisible(false);
                 }}
               >
                 <Text style={[styles.optionText, { color: colors.text }]}>{item.label}</Text>
-                {themeMode === item.key && <Check size={18} color={colors.text} />}
+                {draftThemeMode === item.key && <Check size={18} color={colors.text} />}
               </Pressable>
             ))}
           </View>
@@ -142,12 +216,13 @@ export default function General() {
                 key={item.key}
                 style={styles.option}
                 onPress={() => {
-                  setLanguage(item.key);
+                  setDraftLanguage(item.key);
+                  setIsDirty(true);
                   setLangVisible(false);
                 }}
               >
                 <Text style={[styles.optionText, { color: colors.text }]}>{item.label}</Text>
-                {language === item.key && <Check size={18} color={colors.text} />}
+                {draftLanguage === item.key && <Check size={18} color={colors.text} />}
               </Pressable>
             ))}
           </View>
@@ -158,6 +233,9 @@ export default function General() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     paddingHorizontal: 20,
@@ -165,6 +243,10 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: "flex-start",
+  },
+  content: {
+    flex: 1,
+    justifyContent: "space-between",
   },
   backButton: {
     width: 40,
@@ -208,6 +290,20 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 14,
+  },
+  footer: {
+    paddingBottom: 20,
+    alignItems: "center",
+  },
+  saveButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 40,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   overlay: {
     flex: 1,

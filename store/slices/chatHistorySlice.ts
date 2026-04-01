@@ -12,6 +12,7 @@ export interface ChatHistorySlice {
   fetchHistory: () => Promise<void>;
   fetchArchivedChats: () => Promise<void>;
   toggleArchiveChat: (chatId: string) => Promise<void>;
+  deleteChat: (chatId: string) => Promise<void>;
   archiveAllChats: () => Promise<void>;
   unarchiveAllChats: () => Promise<void>;
   deleteAllChats: () => Promise<void>;
@@ -48,6 +49,16 @@ export const createChatHistorySlice = (set: any, get: any): ChatHistorySlice => 
       await get().fetchHistory();
     } catch (error) {
       console.error('Erreur toggle archive:', error);
+    }
+  },
+
+  deleteChat: async (chatId: string) => {
+    try {
+      await chatService.deleteChat(chatId);
+      await get().fetchArchivedChats();
+      await get().fetchHistory();
+    } catch (error) {
+      console.error("Erreur delete chat:", error);
     }
   },
 

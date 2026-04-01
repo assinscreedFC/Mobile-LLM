@@ -1,6 +1,21 @@
 import {create} from 'zustand';
+import { persist, createJSONStorage } from "zustand/middleware";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const initialOptionsList = {
+interface SettingOption {
+  textKey: string;
+  type: 'separator' | 'NumberInput' | 'switch' | 'action-sheet' | 'PLACEHOLDER';
+  value: any;
+  validValues?: string[];
+}
+
+
+interface InterfaceSettingsState {
+  optionsList: Record<string, SettingOption>;
+  setOptionValue: (id: string, newValue: any) => void;
+}
+
+const initialOptionsList: Record<string, SettingOption> = {
   '0': { textKey: 'iface_sep_ui', type: 'separator', value: null },
   '1': { textKey: 'iface_ui_scale', type: 'NumberInput', value: 100 },
   '2': { textKey: 'iface_high_contrast', type: 'switch', value: false },
@@ -43,19 +58,27 @@ const initialOptionsList = {
   '39': { textKey: 'iface_image_compression', type: 'switch', value: false }
 };
 
-const useInterfaceSettingsStore = create((set) => ({
-  optionsList: initialOptionsList,
-  setOptionsList: (id, newValue) => {
-    set((state) => ({
-      optionsList: {
-        ...state.optionsList,
-        [id]: {
-          ...state.optionsList[id],
-          value: newValue,
-        },
-      },
-    }));
-  },
-}));
+const useInterfaceSettingsStore = create<InterfaceSettingsState>()(
+    persist(
+        (set) => ({
+             optionsList: initialOptionsList,
+             setOptionsList: (id, newValue) => {
+                set((state) => ({
+                    optionsList: {
+                        ...state.optionsList,
+                        [id]: {
+                            ...state.optionsList[id],
+                            value: newValue,
+                        },
+                    },
+                })
+                )
+             }}),
+             {
+                name: "interface-settings-store",
+                storage: createJSONStorage(() => AsyncStorage),
+            }
+    )
+);
 
 export default useInterfaceSettingsStore;

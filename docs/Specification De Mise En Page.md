@@ -157,9 +157,17 @@ manageButton: {
 </Pressable>
 
 
-## 8. Bouton Principal De Validation
+## 8. Bouton Principal De Sauvegarde En Bas De Page
 
-Lorsqu'une page de settings contient une action principale en bas d'ecran, celle-ci doit etre clairement identifiable sans casser l'equilibre visuel de la page. Le bouton principal reste centre, avec une forme en pilule, un espacement interieur plus large et une compatibilite complete avec le theme actif.
+Toutes les pages de settings doivent contenir un bouton principal de sauvegarde place en bas, au centre de l'ecran. Ce bouton sert a valider explicitement les modifications de la page. Il doit reprendre une forme en pilule, un espacement interieur large et une apparence entierement pilotee par le theme actif. La reference de position et de style est le bouton `Enregistrer` de la page `general`.
+
+Position et parametres a reutiliser :
+
+- le conteneur du bouton est `footer`
+- le bouton lui-meme est `saveButton`
+- le texte du bouton est `saveButtonText`
+- `footer` doit rester dans le dernier bloc de `content`, avec `alignItems: "center"` et `paddingBottom: 20`
+- `saveButton` doit utiliser `paddingVertical: 14`, `paddingHorizontal: 40`, `borderRadius: 999` et `borderWidth: 1`
 
 Code :
 
@@ -173,18 +181,29 @@ saveButton: {
   borderRadius: 999,
   borderWidth: 1,
 },
+saveButtonText: {
+  fontSize: 16,
+  fontWeight: "700",
+},
 
-<View style={styles.footer}>
-  <Pressable
-    style={[
-      styles.saveButton,
-      { backgroundColor: colors.card, borderColor: colors.border },
-    ]}
-  >
-    <Text style={[styles.saveButtonText, { color: colors.text }]}>
-      {t("persoSave")}
-    </Text>
-  </Pressable>
+<View style={styles.content}>
+  <View>
+    {/* options et parametres de la page */}
+  </View>
+
+  <View style={styles.footer}>
+    <Pressable
+      style={[
+        styles.saveButton,
+        { backgroundColor: colors.card, borderColor: colors.border },
+      ]}
+      onPress={handleSave}
+    >
+      <Text style={[styles.saveButtonText, { color: colors.text }]}>
+        {t("generalSave")}
+      </Text>
+    </Pressable>
+  </View>
 </View>
 
 
@@ -360,3 +379,30 @@ Code :
   thumbColor={value ? colors.accent : colors.text}
   ios_backgroundColor={colors.subtext}
 />
+
+
+## 15. Validation Differee Des Modifications
+
+Les pages de settings ne doivent pas enregistrer automatiquement une modification des qu'un parametre est change. Toute modification doit d'abord etre stockee dans un etat temporaire local a la page. L'enregistrement global ne doit se produire qu'au moment du clic sur le bouton de sauvegarde en bas de page. Si l'utilisateur quitte directement la page sans appuyer sur ce bouton, les changements ne doivent pas etre conserves.
+
+Code :
+
+const [draftThemeMode, setDraftThemeMode] = useState(themeMode);
+const [draftLanguage, setDraftLanguage] = useState(language);
+const [draftNotificationsEnabled, setDraftNotificationsEnabled] =
+  useState(notificationsEnabled);
+
+const handleSave = () => {
+  setThemeMode(draftThemeMode);
+  setLanguage(draftLanguage);
+  setNotificationsEnabled(draftNotificationsEnabled);
+};
+
+<Switch
+  value={draftNotificationsEnabled}
+  onValueChange={setDraftNotificationsEnabled}
+/>
+
+<Pressable onPress={handleSave}>
+  <Text>{t("generalSave")}</Text>
+</Pressable>

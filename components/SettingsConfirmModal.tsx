@@ -77,12 +77,15 @@ const styles = StyleSheet.create({
   overlayMask: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "flex-end",
+    justifyContent: "center",
+    alignItems: "center",
   },
   overlayCardBottom: {
+    width: "88%",
+    maxWidth: 420,
     margin: 16,
     borderRadius: 24,
-    padding: 16,
+    padding: 20,
     borderWidth: 1,
   },
   overlayTitle: {

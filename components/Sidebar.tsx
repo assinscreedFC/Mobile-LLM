@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @author Anis Hammouche
  * @email anishammouche50@gmail.com
  * @github https://github.com/assinscreedFC
@@ -12,8 +12,11 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   TextInput,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
+import { compteService } from '../services/compteService';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Search,
@@ -45,14 +48,29 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
   const [loading, setLoading] = useState(false);
   const searchInputRef = useRef<TextInput>(null);
 
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState('');
+
   // Charger l'historique quand on ouvre la barre
   useEffect(() => {
     if (visible) {
       const load = async () => {
         setLoading(true);
-        await fetchHistory();
-        setLoading(false);
+
+        try {
+          await fetchHistory();
+
+          const profile = await compteService.getProfile();
+          setAvatarUrl(profile.avatarUrl);
+          setDisplayName(profile.username || '');
+        } catch {
+          setAvatarUrl(null);
+          setDisplayName('');
+        } finally {
+          setLoading(false);
+        }
       };
+
       load();
     }
   }, [visible, fetchHistory]);
@@ -193,13 +211,25 @@ export default function Sidebar({ visible, onClose, t = (k: string) => k }: { vi
           </View>
         </ScrollView>
 
-        {/* BOTTOM Bar */}
-        <View style={{ paddingBottom: Math.max(insets.bottom, 14) }} className="border-t border-[#EBEBEB] px-5 py-[14px] flex-row items-center justify-between bg-[#FBFBFB]">
+        <View
+          style={{ paddingBottom: Math.max(insets.bottom, 14) }}
+          className="border-t border-[#EBEBEB] px-5 py-[14px] flex-row items-center justify-between bg-[#FBFBFB]"
+        >
           <View className="flex-row items-center">
-            <View className="w-9 h-9 rounded-[11px] bg-[#ECECEC] items-center justify-center">
-              <User size={17} color="#999" />
+            <View className="w-9 h-9 rounded-[11px] bg-[#ECECEC] items-center justify-center overflow-hidden">
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <User size={17} color="#999" />
+              )}
             </View>
-            <Text className="ml-3 text-[14.5px] font-semibold text-[#444]">Anis H.</Text>
+            <Text className="ml-3 text-[14.5px] font-semibold text-[#444]">
+              {displayName || 'User'}
+            </Text>
           </View>
           <Settings size={19} color="#AAAAAA" />
         </View>

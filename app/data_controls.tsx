@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   Ionicons,
   Feather,
@@ -16,6 +16,8 @@ import SettingsConfirmModal from "../components/SettingsConfirmModal";
 import { useSettingsStore } from "../store/useSettingsStore";
 import { useResolvedTheme } from "../utils/theme";
 import { useI18n } from "../i18n/useI18n";
+import { useUIScale } from "../hooks/useUIScale";
+import { useHaptics } from "../hooks/useHaptics";
 import { chatService } from "../services/chatService";
 import { useChatStore } from "../store/chatStore";
 
@@ -25,6 +27,14 @@ export default function DataControlsScreen() {
   const { colors } = useResolvedTheme(themeMode);
   const { archiveAllChats, deleteAllChats, fetchHistory, fetchArchivedChats } = useChatStore();
   const { t } = useI18n();
+  const scaledTitleSize = useUIScale(22);
+  const scaledLabelSize = useUIScale(16);
+  const scaledBackButtonSize = useUIScale(40);
+  const scaledBackIconSize = useUIScale(22);
+  const scaledRowIconSize = useUIScale(22);
+  const scaledFontistoIconSize = useUIScale(20);
+  const scaledChevronSize = useUIScale(18);
+  const { haptics } = useHaptics();
   const [confirmMode, setConfirmMode] = useState<"archiveAll" | "deleteAll" | null>(null);
 
   const dataControlOptions = [
@@ -75,11 +85,11 @@ export default function DataControlsScreen() {
 
     switch (item.lib) {
       case "Feather":
-        return <Feather name={item.icon} size={22} color={iconColor} />;
+        return <Feather name={item.icon} size={scaledRowIconSize} color={iconColor} />;
       case "Ionicons":
-        return <Ionicons name={item.icon} size={22} color={iconColor} />;
+        return <Ionicons name={item.icon} size={scaledRowIconSize} color={iconColor} />;
       case "Fontisto":
-        return <Fontisto name={item.icon} size={20} color={iconColor} />;
+        return <Fontisto name={item.icon} size={scaledFontistoIconSize} color={iconColor} />;
       default:
         return null;
     }
@@ -166,18 +176,27 @@ export default function DataControlsScreen() {
       <View style={styles.container}>
         <View style={styles.header}>
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => {
+              haptics("light");
+              router.back();
+            }}
             style={[
               styles.backButton,
-              { backgroundColor: colors.card, borderColor: colors.border },
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                width: scaledBackButtonSize,
+                height: scaledBackButtonSize,
+                borderRadius: scaledBackButtonSize / 2,
+              },
             ]}
           >
-            <ChevronLeft size={22} color={colors.text} strokeWidth={2.5} />
+            <ChevronLeft size={scaledBackIconSize} color={colors.text} strokeWidth={2.5} />
           </Pressable>
         </View>
 
-        <Text style={[styles.title, { color: colors.text }]}>
-          - {t("dataControls")} -   
+        <Text style={[styles.title, { color: colors.text, fontSize: scaledTitleSize }]}>
+          — {t("dataControls")} —
         </Text>
 
         <View style={styles.content}>
@@ -186,6 +205,8 @@ export default function DataControlsScreen() {
               key={item.id}
               style={[styles.item, { backgroundColor: colors.card }]}
               onPress={() => {
+                haptics("light");
+
                 if (item.id === "0") {
                   handleImportChats();
                   return;
@@ -214,16 +235,23 @@ export default function DataControlsScreen() {
               <View style={styles.left}>
                 <View style={styles.iconWrapper}>{renderIcon(item)}</View>
                 <Text
+                  minimumFontScale={0.8}
+                  ellipsizeMode="tail"
                   style={[
                     styles.label,
-                    { color: item.danger ? "#DC2626" : colors.text },
+                    {
+                      color: item.danger ? "#DC2626" : colors.text,
+                      fontSize: scaledLabelSize,
+                    },
                   ]}
                 >
                   {item.text}
                 </Text>
               </View>
 
-              <ChevronRight size={18} color={colors.subtext} />
+              {item.route ? (
+                <ChevronRight size={scaledChevronSize} color={colors.subtext} />
+              ) : null}
             </Pressable>
           ))}
         </View>
